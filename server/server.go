@@ -5,7 +5,6 @@ import (
 	"log"
 	"net"
 
-	"github.com/Anurag-Raut/smtp/dto"
 	reply "github.com/Anurag-Raut/smtp/dto"
 )
 
@@ -76,5 +75,5 @@ func greet(w *bufio.Writer) {
 }
 
 func handleCommands(r *bufio.Reader, w *bufio.Writer) {
-	parser.Get(EHLO)
+
 }

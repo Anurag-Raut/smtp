@@ -1,43 +1,61 @@
 package dto
 
-import "bufio"
+import (
+	"errors"
+	"log"
 
-type Command int
-
-const (
-	EHLO Command = iota
-	MAil
+	"github.com/Anurag-Raut/smtp/server/io/reader"
 )
 
-// func readLine(reader bufio.Reader) (string, error) {
-// 	var s string = ""
-// 	for {
-// 		r, _, err := reader.ReadRune()
-// 		if err != nil {
-// 			return "", err
-// 		}
-//
-// 		if r == '\r' {
-// 			s += string(r)
-// 			nextRn, _, err := reader.ReadRune()
-// 			if err != nil {
-// 				return "", err
-// 			}
-// 			s += string(nextRn)
-// 			if nextRn == '\n' {
-// 				return s, nil
-// 			}
-// 		} else {
-// 			s += string(r)
-// 		}
-// 	}
-//
-//   return s,nil
-//
-// }
+type CommandToken int
 
-func 
+const (
+	EHLO CommandToken = iota
+	MAil
+	NOT_FOUND
+)
 
-func ParseCommand(c Command, r *bufio.Reader, w *bufio.Writer) {
-  line,err:=
+type CommandInterface interface {
+	GetCommandType() CommandToken
+	ParseCommand() error
+}
+
+type Command struct {
+	commandToken CommandToken
+}
+
+func NewCommand(commandString string) CommandInterface {
+	switch commandString {
+	case "EHLO":
+		return &EHLO_CMD{
+			commandToken: EHLO,
+		}
+	default:
+		return nil
+	}
+
+}
+
+type EHLO_CMD struct {
+	commandToken
+	domain string
+}
+
+func (cmd *EHLO_CMD) GetCommandType() CommandToken {
+	return cmd.commandToken
+}
+func (cmd *EHLO_CMD) ParseCommand() error {
+	return nil
+}
+
+func ParseCommandToken(c CommandToken, r *reader.Reader) (CommandInterface, error) {
+
+	cmd, err := r.GetWord(" ")
+	if err != nil {
+		return nil, err
+	}
+
+	cmdObj := NewCommand(cmd)
+	cmdObj.ParseCommand()
+
 }
