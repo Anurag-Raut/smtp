@@ -3,6 +3,7 @@ package reader
 import (
 	"bufio"
 	"errors"
+	"fmt"
 )
 
 type Reader struct {
@@ -41,4 +42,18 @@ func (r *Reader) GetWord(delim string) (string, error) {
 
 	}
 	return word, nil
+}
+
+func (r Reader) ReadStringOfLen(n int) (string, error) {
+	var cmdBytes []byte = make([]byte, 4)
+
+	readLen, err := r.Read(cmdBytes)
+	if err != nil {
+		return "", err
+	}
+	if readLen != n {
+		return "", errors.New(fmt.Sprintf("Could not get string of %d bytes", n))
+
+	}
+	return string(cmdBytes), nil
 }
