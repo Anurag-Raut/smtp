@@ -1,6 +1,10 @@
-package dto
+package reply
 
-import "bufio"
+import (
+	"bufio"
+
+	"github.com/Anurag-Raut/smtp/server/dto/command"
+)
 
 var CLRF = "\r\n"
 
@@ -28,4 +32,8 @@ func Greet(w *bufio.Writer) error {
 	}
 	w.Write(rp.format())
 	return nil
+}
+
+func HandleParseError(w *bufio.Writer, commandToken command.CommandToken, err error) {
+
 }

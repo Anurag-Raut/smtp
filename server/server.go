@@ -5,7 +5,8 @@ import (
 	"log"
 	"net"
 
-	reply "github.com/Anurag-Raut/smtp/dto"
+	"github.com/Anurag-Raut/smtp/server/io/reader"
+	"github.com/Anurag-Raut/smtp/server/session"
 )
 
 type Server struct {
@@ -60,20 +61,9 @@ func (s *Server) Listen() {
 }
 
 func handleConn(conn net.Conn) {
-	reader := bufio.NewReader(conn)
+	reader := reader.NewReader(conn)
 	writer := bufio.NewWriter(conn)
-	reply.Greet(writer)
-
-	handleCommands(reader, writer)
-
-}
-
-func greet(w *bufio.Writer) {
-	newGreeting := reply.NewGreeting()
-
-	w.Write(newGreeting)
-}
-
-func handleCommands(r *bufio.Reader, w *bufio.Writer) {
+	session := session.NewSession(writer)
+	session.Begin(reader, writer)
 
 }

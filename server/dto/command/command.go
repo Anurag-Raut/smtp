@@ -1,21 +1,9 @@
-package dto
+package command
 
 import (
-	"github.com/Anurag-Raut/smtp/server/io/reader"
-)
+	"github.com/Anurag-Raut/smtp/server/parser"
 
-type CommandToken int
-
-const (
-	EHLO CommandToken = iota
-	MAIL
-	RCPT
-	QUIT
-	EXPN
-	VRFY
-	NOOP
-	DATA
-	NOT_FOUND
+	. "github.com/Anurag-Raut/smtp/server/parser"
 )
 
 type CommandInterface interface {
@@ -66,8 +54,10 @@ func NewCommand(commandString string) CommandInterface {
 		return &HELP_CMD{
 			Command: Command{commandToken: HELP},
 		}
-    CASE "RSET":
-    return 
+	case "RSET":
+		return &RESET_CMD{
+			Command: Command{commandToken: RSET},
+		}
 	case "QUIT":
 		return &QUIT_CMD{
 			Command: Command{commandToken: QUIT},
@@ -84,6 +74,7 @@ type EHLO_CMD struct {
 }
 
 func (cmd *EHLO_CMD) ParseCommand() error {
+	domain, err := parser.ParseEHLO()
 	return nil
 }
 
@@ -166,14 +157,14 @@ func (cmd *QUIT_CMD) ParseCommand() error {
 	return nil
 }
 
-func GetCommand(c CommandToken, r *reader.Reader) (CommandInterface, error) {
+func GetCommand(r *parser.Parser) (CommandInterface, error) {
 
-	cmd, err := r.ReadStringOfLen(4)
+	cmdToken, err := parser.ParseCommandToken()
 	if err != nil {
 		return nil, err
 	}
 
-	cmdObj := NewCommand(cmd)
+	cmdObj := NewCommand(cmdToken)
 	err = cmdObj.ParseCommand()
 	if err != nil {
 		return nil, err

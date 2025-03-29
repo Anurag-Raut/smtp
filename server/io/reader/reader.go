@@ -4,11 +4,18 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	"net"
 )
 
 type Reader struct {
 	*bufio.Reader
-	index int
+}
+
+func NewReader(conn net.Conn) *Reader {
+
+	bufIOReader := bufio.NewReader(conn)
+	reader := Reader{bufIOReader}
+	return &reader
 }
 
 func (r *Reader) GetWord(delim string) (string, error) {
@@ -57,3 +64,5 @@ func (r Reader) ReadStringOfLen(n int) (string, error) {
 	}
 	return string(cmdBytes), nil
 }
+
+func Expect(token)
