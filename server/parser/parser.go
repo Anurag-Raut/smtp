@@ -3,6 +3,7 @@ package parser
 import (
 	"errors"
 	"fmt"
+	"text/template/parse"
 	"unicode"
 
 	"github.com/Anurag-Raut/smtp/server/io/reader"
@@ -166,9 +167,17 @@ func (p *Parser) parseSubDomain() (string, error) {
 	}
 
 	if len(middleVal) > 0 {
-		endVal := middleVal[len(middleVal)-1]
+		err := p.reader.UnreadByte()
+		if err != nil {
+			return "", err
+		}
+		_, err = p.ExpectMultiple(ALPHA, DIGIT)
+
+		if err != nil {
+			return firstVal + middleVal, err
+		}
 
 	}
-	return firstVal + middleVal + endVal
+	return firstVal + middleVal, nil
 
 }
