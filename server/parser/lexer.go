@@ -15,6 +15,12 @@ const (
 	DIGIT
 	HYPHEN
 	DOT
+	KEYWORD
+	AT
+	ATEXT
+	QTEXTSMTP
+	QPAIRSMTP
+	DQUOTE
 )
 
 type CommandToken TokenType
