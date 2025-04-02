@@ -21,6 +21,8 @@ const (
 	QTEXTSMTP
 	QPAIRSMTP
 	DQUOTE
+	LEFT_SQUARE_BRAC
+	RIGHT_SQUARE_BRAC
 )
 
 type CommandToken TokenType

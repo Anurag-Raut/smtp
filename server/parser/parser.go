@@ -136,7 +136,15 @@ func (p *Parser) ParseEHLO() (string, error) {
 		return "", err
 	}
 	domain, err := p.parseDomain()
-	return domain, err
+
+	if err == nil {
+		return domain, nil
+	}
+	addressLiteral, err := p.parseAddressLiteral()
+	if err != nil {
+		return "", err
+	}
+	return addressLiteral, err
 }
 
 func (p *Parser) parseDomain() (string, error) {
@@ -397,5 +405,45 @@ func (p *Parser) parseQuotedString() (string, error) {
 }
 
 func (p *Parser) parseAddressLiteral() (string, error) {
-	return "", nil
+	_, err := p.Expect(LEFT_SQUARE_BRAC)
+	if err != nil {
+		return "", err
+	}
+
+	ip4addres, err := p.parseIPV4_AddressLiteral()
+	if err != nil {
+		return "", err
+	}
+	_, err = p.Expect(RIGHT_SQUARE_BRAC)
+	if err != nil {
+		return "", err
+	}
+	return ip4addres, nil
+}
+
+func (p *Parser) parseIPV4_AddressLiteral() (string, error) {
+	ipv4_address := ""
+	for i := 0; i < 3; i++ {
+		val, err := p.Expect(DIGIT)
+		if err != nil {
+			return "", err
+		}
+		ipv4_address += val
+	}
+
+	for j := 0; j < 3; j++ {
+		dotString, err := p.Expect(DOT)
+		if err != nil {
+			return "", err
+		}
+		ipv4_address += dotString
+		for i := 0; i < 3; i++ {
+			val, err := p.Expect(DIGIT)
+			if err != nil {
+				return "", err
+			}
+			ipv4_address += val
+		}
+	}
+
 }
