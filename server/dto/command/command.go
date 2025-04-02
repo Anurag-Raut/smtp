@@ -1,8 +1,6 @@
 package command
 
 import (
-	"github.com/Anurag-Raut/smtp/server/parser"
-
 	. "github.com/Anurag-Raut/smtp/server/parser"
 )
 
@@ -13,17 +11,18 @@ type CommandInterface interface {
 
 type Command struct {
 	commandToken CommandToken
+	parser       *Parser
 }
 
 func (cmd *Command) GetCommandType() CommandToken {
 	return cmd.commandToken
 }
 
-func NewCommand(commandString string) CommandInterface {
+func NewCommand(commandString string, parser *Parser) CommandInterface {
 	switch commandString {
 	case "EHLO":
 		return &EHLO_CMD{
-			Command: Command{commandToken: EHLO},
+			Command: Command{commandToken: EHLO, parser: parser},
 		}
 	case "MAIL":
 		return &MAIL_CMD{
@@ -74,8 +73,9 @@ type EHLO_CMD struct {
 }
 
 func (cmd *EHLO_CMD) ParseCommand() error {
-	domain, err := parser.ParseEHLO()
-	return nil
+	domain, err := cmd.parser.ParseEHLO()
+	cmd.domain = domain
+	return err
 }
 
 type MAIL_CMD struct {
@@ -157,14 +157,14 @@ func (cmd *QUIT_CMD) ParseCommand() error {
 	return nil
 }
 
-func GetCommand(r *parser.Parser) (CommandInterface, error) {
+func GetCommand(parser *Parser) (CommandInterface, error) {
 
 	cmdToken, err := parser.ParseCommandToken()
 	if err != nil {
 		return nil, err
 	}
 
-	cmdObj := NewCommand(cmdToken)
+	cmdObj := NewCommand(cmdToken, parser)
 	err = cmdObj.ParseCommand()
 	if err != nil {
 		return nil, err

@@ -161,6 +161,7 @@ func (p *Parser) parseDomain() (string, error) {
 			} else {
 				return "", err
 			}
+
 		}
 		subDomain += "."
 		newSubDomain, err := p.parseSubDomain()
@@ -445,5 +446,7 @@ func (p *Parser) parseIPV4_AddressLiteral() (string, error) {
 			ipv4_address += val
 		}
 	}
+
+	return ipv4_address, nil
 
 }
