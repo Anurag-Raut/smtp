@@ -1,7 +1,6 @@
 package client
 
 import (
-	"bufio"
 	"errors"
 	"net"
 	"slices"
@@ -54,7 +53,7 @@ func (c *Client) SendEmail(from string, to string, body *string) error {
 		}
 
 		session := session.NewSession(conn)
-		err := session.Begin()
+		err = session.Begin()
 		if err != nil {
 			return err
 		}

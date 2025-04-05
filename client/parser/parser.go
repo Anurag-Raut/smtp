@@ -47,11 +47,73 @@ func (p *ReplyParser) ParseGreeting() (identifier string, textStrings []string, 
 		}
 		return identifier, textString, nil
 
-	} else if (errors.Is(err, TokenNotFound{})) {
+	} else {
+		_, err := p.expect(HYPHEN)
+		if err != nil {
+			return identifier, textStrings, err
+		}
+		return p.parseMultiLineTextString()
 
 	}
 
-	return identifier, textStrings, nil
+}
+func (p *ReplyParser) ParseReplyLine() (replyCode int, textStrings []string, err error) {
+
+	codeString, err := p.expect(CODE)
+	if err != nil {
+		return replyCode, textStrings, err
+	}
+
+	replyCode, err = strconv.Atoi(codeString)
+	if err != nil {
+		return replyCode, textStrings, err
+	}
+	for {
+		codeString, err := p.expect(CODE)
+		if err != nil {
+			return replyCode, textStrings, err
+		}
+
+		rCode, err := strconv.Atoi(codeString)
+		if err != nil {
+			return replyCode, textStrings, err
+		}
+
+		if rCode != replyCode {
+			return replyCode, textStrings, errors.New("Expected same reply code as first line b ut got: " + codeString)
+		}
+
+		_, err = p.expect(HYPHEN)
+		if err == nil {
+			txtString, err := p.parserTextString()
+			if err != nil {
+				return replyCode, textStrings, nil
+			}
+			textStrings = append(textStrings, txtString)
+			_, err = p.expect(CRLF)
+			if err != nil {
+				return replyCode, textStrings, nil
+			}
+		} else {
+
+			_, err := p.expect(SPACE)
+			if err == nil {
+				txtString, err := p.parserTextString()
+				if err != nil {
+					return replyCode, textStrings, err
+				}
+				textStrings = append(textStrings, txtString)
+
+			}
+			_, err = p.expect(CRLF)
+			if err != nil {
+				return replyCode, textStrings, err
+			}
+			return replyCode, textStrings, nil
+		}
+
+	}
+
 }
 
 func (p *ReplyParser) parseSingleLine() (identifier string, textStrings []string, err error) {

@@ -19,6 +19,13 @@ const (
 	HYPHEN
 )
 
+type ReplyToken int
+
+const (
+	ReplyLine ReplyToken = iota
+	Greeting
+)
+
 type TokenNotFound struct {
 	token TokenType
 }

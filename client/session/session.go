@@ -3,12 +3,14 @@ package session
 import (
 	"bufio"
 	"net"
+
+	"github.com/Anurag-Raut/smtp/client/dto/reply"
+	"github.com/Anurag-Raut/smtp/client/parser"
 )
 
 type Session struct {
 	reader *bufio.Reader
 	writer *bufio.Writer
-	parser
 }
 
 func NewSession(conn net.Conn) *Session {
@@ -23,6 +25,11 @@ func (s *Session) SendEmail(from string, to []string, body *string) {
 }
 
 func (s *Session) Begin() error {
-	reply.Gr
+	p := parser.NewReplyParser(s.reader)
+	greeting, err := reply.GetReply(parser.Greeting, p)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
