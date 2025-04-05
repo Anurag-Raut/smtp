@@ -55,6 +55,10 @@ func (c *Client) SendEmail(from string, to string, body *string) error {
 
 		session := session.NewSession(conn)
 		err := session.Begin()
+		if err != nil {
+			return err
+		}
+
 	}
 
 	return errors.New("Could resolve any MX records")

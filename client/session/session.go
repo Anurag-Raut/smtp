@@ -3,8 +3,6 @@ package session
 import (
 	"bufio"
 	"net"
-
-	"github.com/Anurag-Raut/smtp/client/parser"
 )
 
 type Session struct {
@@ -24,7 +22,7 @@ func (s *Session) SendEmail(from string, to []string, body *string) {
 
 }
 
-func (s *Session) Begin() {
-	parser := parser.
-		reply.getReply()
+func (s *Session) Begin() error {
+	reply.Gr
+	return nil
 }

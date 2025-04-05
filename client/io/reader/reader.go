@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
-	"net"
 )
 
 type Reader struct {
@@ -46,7 +45,6 @@ func (r *Reader) GetWord(delim string) (string, error) {
 		}
 
 	}
-	return word, nil
 }
 
 func (r Reader) ReadStringOfLen(n int) (string, error) {
