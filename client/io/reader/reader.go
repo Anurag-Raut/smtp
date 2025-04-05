@@ -11,10 +11,8 @@ type Reader struct {
 	*bufio.Reader
 }
 
-func NewReader(conn net.Conn) *Reader {
-
-	bufIOReader := bufio.NewReader(conn)
-	reader := Reader{bufIOReader}
+func NewReader(r *bufio.Reader) *Reader {
+	reader := Reader{r}
 	return &reader
 }
 

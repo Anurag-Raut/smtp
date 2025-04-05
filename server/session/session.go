@@ -34,7 +34,7 @@ type MailState struct {
 	mailDataBuffer    []byte
 }
 
-func NewSession(w *bufio.Writer) *Session {
+func NewSession() *Session {
 
 	return &Session{}
 }
