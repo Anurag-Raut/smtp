@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"net"
 
+	"github.com/Anurag-Raut/smtp/client/dto/command"
 	"github.com/Anurag-Raut/smtp/client/dto/reply"
 	"github.com/Anurag-Raut/smtp/client/parser"
 )
@@ -30,6 +31,7 @@ func (s *Session) Begin() error {
 	if err != nil {
 		return err
 	}
+	command.SendEHLO(s.writer)
 
 	return nil
 }
