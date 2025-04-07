@@ -9,16 +9,18 @@ import (
 type Reply struct {
 	code        int
 	textStrings []string
-	parser      *parser.ReplyParser
+
+	parser *parser.ReplyParser
 }
 
 type ReplyInterface interface {
 	ParseReply() error
+	Execute() error
 }
 
 type GreetingReply struct {
-	Reply
 	serverIdentifier string
+	Reply
 }
 
 func (r *GreetingReply) ParseReply() error {
@@ -41,7 +43,13 @@ func (r *Reply) ParseReply() error {
 	r.textStrings = textStrings
 	return nil
 }
+func (r *Reply) Execute() error {
+	return nil
+}
 
+func (r *GreetingReply) Execute() error {
+	return nil
+}
 func GetReply(token parser.ReplyToken, p *parser.ReplyParser) (reply ReplyInterface, err error) {
 
 	switch token {
@@ -50,6 +58,10 @@ func GetReply(token parser.ReplyToken, p *parser.ReplyParser) (reply ReplyInterf
 			parser: p,
 		}
 		break
+	case parser.Greeting:
+		reply = &GreetingReply{
+			Reply: Reply{parser: p},
+		}
 	default:
 		{
 			return nil, errors.New("Could not find the Reply")

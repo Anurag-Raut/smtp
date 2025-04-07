@@ -32,6 +32,6 @@ func (s *Session) Begin() error {
 		return err
 	}
 	command.SendEHLO(s.writer)
-
+	greeting.Execute()
 	return nil
 }

@@ -13,11 +13,6 @@ type Client struct {
 }
 
 func (c *Client) GetMxRecords(from string) ([]*net.MX, error) {
-	/*\
-	  1) Do dns  mx lookup
-	  1) build the request
-	*/
-
 	domain, err := parser.GetDomainFromEmail(from)
 	if err != nil {
 		return nil, err
