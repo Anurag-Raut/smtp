@@ -14,7 +14,7 @@ func sendMail(w http.ResponseWriter, r *http.Request) {
 	type body struct {
 		from string
 		to   []string
-		body []byte
+		body *string
 	}
 	var m body
 	bodyBytes, err := io.ReadAll(r.Body)
@@ -23,7 +23,13 @@ func sendMail(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error whi;e parsing the body", http.StatusBadRequest)
 		return
 	}
+	client := GetClient()
 
+	err = client.SendEmail(m.from, m.to[0], m.body)
+	if err != nil {
+		http.Error(w, "Error while sending the mail", http.StatusBadRequest)
+		return
+	}
 }
 
 func main() {

@@ -2,22 +2,21 @@ package reply
 
 import (
 	"bufio"
-
-	"github.com/Anurag-Raut/smtp/server/dto/command"
 )
 
 var CLRF = "\r\n"
 
 type Reply struct {
 	code uint16
-	text *string
+	text []string
 }
 
 func (r *Reply) format() []byte {
 	replyString := string(r.code)
 	replyString += " "
 	if r.text != nil {
-		replyString += (*r.text)
+		//BUG: check this out later
+		replyString += (r.text[0])
 	}
 	replyString += CLRF
 	return []byte(replyString)
@@ -25,15 +24,21 @@ func (r *Reply) format() []byte {
 }
 
 func Greet(w *bufio.Writer) error {
-	text := "Anurag Server"
+	text := []string{"Anurag Server"}
 	rp := Reply{
 		code: 220,
-		text: &text,
+		text: text,
 	}
 	w.Write(rp.format())
 	return nil
 }
 
-func HandleParseError(w *bufio.Writer, commandToken command.CommandToken, err error) {
+func NewReply(code uint16, textlines ...string) *Reply {
+	return &Reply{
+		code: code,
+		text: textlines,
+	}
+}
 
+func (r Reply) HandleSmtpReply(w *bufio.Writer) {
 }

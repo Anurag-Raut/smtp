@@ -3,6 +3,7 @@ package parser
 import (
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 	"unicode"
 
@@ -448,5 +449,30 @@ func (p *Parser) parseIPV4_AddressLiteral() (string, error) {
 	}
 
 	return ipv4_address, nil
+
+}
+
+func (p *Parser) parseRCPT() (string, error) {
+	_, err := p.Expect(SPACE)
+	if err != nil {
+		return "", err
+	}
+	toString, err := p.reader.ReadStringOfLen(2)
+	if err != nil {
+		return "", err
+	}
+	if strings.ToLower(toString) != "to" {
+		return "", errors.New("ERROR: Expected TO")
+	}
+	_, err = p.Expect(COLON)
+	if err != nil {
+		return "", err
+	}
+	path, err := p.parsePath()
+	if err != nil {
+		return "", err
+	}
+
+	return path, nil
 
 }

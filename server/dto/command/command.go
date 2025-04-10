@@ -1,12 +1,15 @@
 package command
 
 import (
+	"github.com/Anurag-Raut/smtp/server/dto/reply"
 	. "github.com/Anurag-Raut/smtp/server/parser"
+	"github.com/Anurag-Raut/smtp/server/state"
 )
 
 type CommandInterface interface {
 	GetCommandType() CommandToken
 	ParseCommand() error
+	ProcessCommand(mailState *state.MailState) *reply.Reply
 }
 
 type Command struct {
@@ -16,6 +19,10 @@ type Command struct {
 
 func (cmd *Command) GetCommandType() CommandToken {
 	return cmd.commandToken
+}
+
+func (cmd *Command) ProcessCommand(mailState *state.MailState) *reply.Reply {
+	return reply.NewReply(502, "Command not implemented")
 }
 
 func NewCommand(commandString string, parser *Parser) CommandInterface {
@@ -78,6 +85,16 @@ func (cmd *EHLO_CMD) ParseCommand() error {
 	return err
 }
 
+func (cmd *EHLO_CMD) ProcessCommand(mailState *state.MailState) *reply.Reply {
+	// send EHLO OK RSP
+	err := mailState.SetMailStep(state.EHLO)
+	if err != nil {
+		reply.NewReply(503, err.Error())
+	}
+	mailState.ClearAll()
+	return reply.NewReply(250)
+}
+
 type MAIL_CMD struct {
 	Command
 	reversePath string
@@ -86,14 +103,32 @@ type MAIL_CMD struct {
 func (cmd *MAIL_CMD) ParseCommand() error {
 	return nil
 }
+func (cmd *MAIL_CMD) ProcessCommand(mailState *state.MailState) *reply.Reply {
+	err := mailState.SetMailStep(state.MAIL)
+	if err != nil {
+		return reply.NewReply(503, err.Error())
+	}
+	mailState.ClearAll()
+	mailState.SetReversePathBuffer([]byte(cmd.reversePath))
+	return reply.NewReply(250)
+}
 
 type RCPT_CMD struct {
 	Command
-	address string
+	forwardPath string
 }
 
 func (cmd *RCPT_CMD) ParseCommand() error {
 	return nil
+}
+
+func (cmd *RCPT_CMD) ProcessCommand(mailState *state.MailState) *reply.Reply {
+	err := mailState.SetMailStep(state.RCPT)
+	if err != nil {
+		return reply.NewReply(503, err.Error())
+	}
+	mailState.SetForwardPathBuffer([]byte(cmd.forwardPath))
+	return reply.NewReply(250)
 }
 
 type DATA_CMD struct {
@@ -103,6 +138,16 @@ type DATA_CMD struct {
 
 func (cmd *DATA_CMD) ParseCommand() error {
 	return nil
+}
+
+func (cmd *DATA_CMD) ProcessCommand(mailState *state.MailState) *reply.Reply {
+	err := mailState.SetMailStep(state.DATA)
+	if err != nil {
+		return reply.NewReply(503, err.Error())
+	}
+	//TODO: make sure that we need to append or not
+	mailState.SetMailDataBuffer([]byte(cmd.data))
+	return reply.NewReply(250)
 }
 
 type RESET_CMD struct {

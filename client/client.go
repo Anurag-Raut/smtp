@@ -12,7 +12,11 @@ import (
 type Client struct {
 }
 
-func (c *Client) GetMxRecords(from string) ([]*net.MX, error) {
+func GetClient() *Client {
+	return &Client{}
+}
+
+func (c *Client) getMxRecords(from string) ([]*net.MX, error) {
 	domain, err := parser.GetDomainFromEmail(from)
 	if err != nil {
 		return nil, err
@@ -36,7 +40,7 @@ func (c *Client) GetMxRecords(from string) ([]*net.MX, error) {
 
 func (c *Client) SendEmail(from string, to string, body *string) error {
 
-	mxRecords, err := c.GetMxRecords(from)
+	mxRecords, err := c.getMxRecords(from)
 	if err != nil {
 		return err
 	}

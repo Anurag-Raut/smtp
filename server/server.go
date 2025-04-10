@@ -63,7 +63,7 @@ func (s *Server) Listen() {
 func handleConn(conn net.Conn) {
 	reader := reader.NewReader(conn)
 	writer := bufio.NewWriter(conn)
-	session := session.NewSession(writer)
+	session := session.NewSession()
 	session.Begin(reader, writer)
 
 }

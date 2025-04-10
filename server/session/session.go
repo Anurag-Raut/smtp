@@ -7,6 +7,7 @@ import (
 	"github.com/Anurag-Raut/smtp/server/dto/reply"
 	"github.com/Anurag-Raut/smtp/server/io/reader"
 	"github.com/Anurag-Raut/smtp/server/parser"
+	"github.com/Anurag-Raut/smtp/server/state"
 )
 
 /*
@@ -24,19 +25,14 @@ import (
 */
 
 type Session struct {
-	stepIndex int
-	mailStae  MailState
-}
-
-type MailState struct {
-	reversePathBuffer []byte
-	forwardPathBuffer []byte
-	mailDataBuffer    []byte
+	mailState *state.MailState
 }
 
 func NewSession() *Session {
 
-	return &Session{}
+	return &Session{
+		mailState: &state.MailState{},
+	}
 }
 func (s *Session) Begin(reader *reader.Reader, writer *bufio.Writer) {
 	reply.Greet(writer)
@@ -44,9 +40,11 @@ func (s *Session) Begin(reader *reader.Reader, writer *bufio.Writer) {
 	for {
 		cmd, err := command.GetCommand(parser)
 		if err != nil {
-			reply.HandleParseError(writer, cmd.GetCommandType(), err)
+			// reply.HandleParseError(writer, cmd.GetCommandType(), err)
 		}
 
+		responseReply := cmd.ProcessCommand(s.mailState)
+		responseReply.HandleSmtpReply(writer)
 	}
 
 }
