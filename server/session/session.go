@@ -10,20 +10,6 @@ import (
 	"github.com/Anurag-Raut/smtp/server/state"
 )
 
-/*
- Order of Commands
- 1) EHLO
- 2) MAIL
- 3) RCPt
-
-
-
- anytime
-
- NOOP, HELP, EXPN, VRFY, and RSET
-
-*/
-
 type Session struct {
 	mailState *state.MailState
 }

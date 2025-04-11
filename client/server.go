@@ -26,10 +26,10 @@ func sendMail(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error whi;e parsing the body", http.StatusBadRequest)
 		return
 	}
-	client := getClient()
-	err = client.SendEmail(m.From, m.To[0], m.Body)
+	client := getClient(w)
+	err = client.SendEmail(m.From, m.To, m.Body)
 	if err != nil {
-		http.Error(w, "Error while sending the mail", http.StatusBadRequest)
+		http.Error(w, "Error while sending the mail: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 }

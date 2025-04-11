@@ -24,8 +24,8 @@ func TestMail(t *testing.T) {
 
 	time.Sleep(1 * time.Second)
 	mailBody := map[string]any{
-		"from": "test@example.com",
-		"to":   []string{"receiver@example.com"},
+		"from": "test@localhost",
+		"to":   []string{"receiver@localhost"},
 		"body": "This is a test email",
 	}
 	bodyBytes, err := json.Marshal(mailBody)
