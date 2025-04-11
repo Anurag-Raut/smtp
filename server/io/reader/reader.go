@@ -18,7 +18,7 @@ func NewReader(conn net.Conn) *Reader {
 	return &reader
 }
 
-func (r *Reader) GetWord(delim string) (string, error) {
+func (r *Reader) GetLine(delim string) (string, error) {
 	var word string = ""
 	var delimIndex int = 0
 	for {

@@ -36,15 +36,23 @@ func NewSession() *Session {
 }
 func (s *Session) Begin(reader *reader.Reader, writer *bufio.Writer) {
 	reply.Greet(writer)
-	parser := parser.NewParser(reader)
+	p := parser.NewParser(reader)
 	for {
-		cmd, err := command.GetCommand(parser)
+		cmd, err := command.GetCommand(p)
 		if err != nil {
 			// reply.HandleParseError(writer, cmd.GetCommandType(), err)
 		}
 
-		responseReply := cmd.ProcessCommand(s.mailState)
-		responseReply.HandleSmtpReply(writer)
+		replyChannel := make(chan *reply.Reply)
+		go cmd.ProcessCommand(s.mailState, replyChannel)
+		for {
+			var responseReply *reply.Reply
+			responseReply, ok := <-replyChannel
+			if !ok {
+				break
+			}
+			responseReply.HandleSmtpReply(writer)
+		}
 	}
 
 }

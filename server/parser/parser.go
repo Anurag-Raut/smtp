@@ -3,7 +3,6 @@ package parser
 import (
 	"errors"
 	"fmt"
-	"strconv"
 	"strings"
 	"unicode"
 
@@ -452,7 +451,7 @@ func (p *Parser) parseIPV4_AddressLiteral() (string, error) {
 
 }
 
-func (p *Parser) parseRCPT() (string, error) {
+func (p *Parser) ParseRCPT() (string, error) {
 	_, err := p.Expect(SPACE)
 	if err != nil {
 		return "", err
@@ -472,7 +471,20 @@ func (p *Parser) parseRCPT() (string, error) {
 	if err != nil {
 		return "", err
 	}
-
+	_, err = p.Expect(CRLF)
+	if err != nil {
+		return "", err
+	}
 	return path, nil
+}
 
+func (p *Parser) ParseData() error {
+	_, err := p.Expect(CRLF)
+	return err
+}
+
+func (p *Parser) ParseDataLine() (line string, err error) {
+
+	line, err = p.reader.GetLine("\r\n")
+	return line, err
 }

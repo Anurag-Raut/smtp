@@ -9,7 +9,7 @@ import (
 type CommandInterface interface {
 	GetCommandType() CommandToken
 	ParseCommand() error
-	ProcessCommand(mailState *state.MailState) *reply.Reply
+	ProcessCommand(mailState *state.MailState, replyChannel chan *reply.Reply)
 }
 
 type Command struct {
@@ -21,8 +21,10 @@ func (cmd *Command) GetCommandType() CommandToken {
 	return cmd.commandToken
 }
 
-func (cmd *Command) ProcessCommand(mailState *state.MailState) *reply.Reply {
-	return reply.NewReply(502, "Command not implemented")
+func (cmd *Command) ProcessCommand(mailState *state.MailState, replyChannel chan *reply.Reply) {
+	defer close(replyChannel)
+	replyChannel <- reply.NewReply(502, "Command not implemented")
+
 }
 
 func NewCommand(commandString string, parser *Parser) CommandInterface {
@@ -85,14 +87,18 @@ func (cmd *EHLO_CMD) ParseCommand() error {
 	return err
 }
 
-func (cmd *EHLO_CMD) ProcessCommand(mailState *state.MailState) *reply.Reply {
+func (cmd *EHLO_CMD) ProcessCommand(mailState *state.MailState, replyChannel chan *reply.Reply) {
 	// send EHLO OK RSP
+	defer close(replyChannel)
+
 	err := mailState.SetMailStep(state.EHLO)
 	if err != nil {
-		reply.NewReply(503, err.Error())
+		replyChannel <- reply.NewReply(503, err.Error())
+		return
 	}
 	mailState.ClearAll()
-	return reply.NewReply(250)
+	replyChannel <- reply.NewReply(250)
+	return
 }
 
 type MAIL_CMD struct {
@@ -103,14 +109,17 @@ type MAIL_CMD struct {
 func (cmd *MAIL_CMD) ParseCommand() error {
 	return nil
 }
-func (cmd *MAIL_CMD) ProcessCommand(mailState *state.MailState) *reply.Reply {
+func (cmd *MAIL_CMD) ProcessCommand(mailState *state.MailState, replyChannel chan *reply.Reply) {
+	defer close(replyChannel)
 	err := mailState.SetMailStep(state.MAIL)
 	if err != nil {
-		return reply.NewReply(503, err.Error())
+		replyChannel <- reply.NewReply(503, err.Error())
+		return
 	}
 	mailState.ClearAll()
 	mailState.SetReversePathBuffer([]byte(cmd.reversePath))
-	return reply.NewReply(250)
+	replyChannel <- reply.NewReply(250)
+	return
 }
 
 type RCPT_CMD struct {
@@ -122,13 +131,15 @@ func (cmd *RCPT_CMD) ParseCommand() error {
 	return nil
 }
 
-func (cmd *RCPT_CMD) ProcessCommand(mailState *state.MailState) *reply.Reply {
+func (cmd *RCPT_CMD) ProcessCommand(mailState *state.MailState, replyChannel chan *reply.Reply) {
+	defer close(replyChannel)
 	err := mailState.SetMailStep(state.RCPT)
 	if err != nil {
-		return reply.NewReply(503, err.Error())
+		replyChannel <- reply.NewReply(503, err.Error())
+		return
 	}
 	mailState.SetForwardPathBuffer([]byte(cmd.forwardPath))
-	return reply.NewReply(250)
+	replyChannel <- reply.NewReply(250)
 }
 
 type DATA_CMD struct {
@@ -140,14 +151,26 @@ func (cmd *DATA_CMD) ParseCommand() error {
 	return nil
 }
 
-func (cmd *DATA_CMD) ProcessCommand(mailState *state.MailState) *reply.Reply {
+func (cmd *DATA_CMD) ProcessCommand(mailState *state.MailState, replyChannel chan *reply.Reply) {
+	defer close(replyChannel)
 	err := mailState.SetMailStep(state.DATA)
 	if err != nil {
-		return reply.NewReply(503, err.Error())
+		replyChannel <- reply.NewReply(503, err.Error())
+		return
 	}
-	//TODO: make sure that we need to append or not
+	replyChannel <- reply.NewReply(354)
+	for {
+		line, err := cmd.parser.ParseDataLine()
+		if err != nil {
+			replyChannel <- reply.NewReply(502, err.Error())
+			return
+		}
+		if line == "." {
+			break
+		}
+	}
 	mailState.SetMailDataBuffer([]byte(cmd.data))
-	return reply.NewReply(250)
+	replyChannel <- reply.NewReply(250)
 }
 
 type RESET_CMD struct {
