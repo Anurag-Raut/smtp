@@ -12,7 +12,7 @@ import (
 type Client struct {
 }
 
-func GetClient() *Client {
+func getClient() *Client {
 	return &Client{}
 }
 

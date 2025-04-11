@@ -117,7 +117,7 @@ func (cmd *MAIL_CMD) ProcessCommand(mailState *state.MailState, replyChannel cha
 		return
 	}
 	mailState.ClearAll()
-	mailState.SetReversePathBuffer([]byte(cmd.reversePath))
+	mailState.AppendReversePatahBuffer([]byte(cmd.reversePath))
 	replyChannel <- reply.NewReply(250)
 	return
 }
@@ -138,7 +138,7 @@ func (cmd *RCPT_CMD) ProcessCommand(mailState *state.MailState, replyChannel cha
 		replyChannel <- reply.NewReply(503, err.Error())
 		return
 	}
-	mailState.SetForwardPathBuffer([]byte(cmd.forwardPath))
+	mailState.AppendForwardPathBuffer([]byte(cmd.forwardPath))
 	replyChannel <- reply.NewReply(250)
 }
 
@@ -168,8 +168,9 @@ func (cmd *DATA_CMD) ProcessCommand(mailState *state.MailState, replyChannel cha
 		if line == "." {
 			break
 		}
+
+		mailState.AppendMailDataBuffer([]byte(cmd.data))
 	}
-	mailState.SetMailDataBuffer([]byte(cmd.data))
 	replyChannel <- reply.NewReply(250)
 }
 

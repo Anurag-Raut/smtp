@@ -12,6 +12,8 @@ import (
 type Server struct {
 	port     string
 	adddress string
+	listner  net.Listener
+	done     chan struct{}
 }
 
 type Config struct {
@@ -41,23 +43,37 @@ func NewServer(c Config) *Server {
 	server := Server{
 		port:     port,
 		adddress: addr,
+		done:     make(chan struct{}),
 	}
 	return &server
 }
 
 func (s *Server) Listen() {
-	listner, err := net.Listen("tcp", s.adddress+":"+s.port)
+	log.Println("Listening on port", s.port)
+	newListner, err := net.Listen("tcp", s.adddress+":"+s.port)
+	s.listner = newListner
 	if err != nil {
 		log.Println("Error: ", err.Error())
 	}
 
 	for {
-		c, err := listner.Accept()
+		c, err := s.listner.Accept()
 		if err != nil {
-			log.Print("Error", err.Error())
+			select {
+			case <-s.done:
+				log.Println("server is shutting down")
+				return
+			default:
+				log.Print("Error", err.Error())
+			}
 		}
 		go handleConn(c)
 	}
+}
+
+func (s *Server) Close() {
+	close(s.done)
+	s.listner.Close()
 }
 
 func handleConn(conn net.Conn) {

@@ -40,15 +40,15 @@ func (mailState *MailState) ClearAll() {
 	mailState.ClearForwardPathBuffer()
 }
 
-func (mailState *MailState) SetReversePathBuffer(data []byte) {
+func (mailState *MailState) AppendReversePatahBuffer(data []byte) {
 	mailState.reversePathBuffer = data
 }
 
-func (mailState *MailState) SetForwardPathBuffer(data []byte) {
+func (mailState *MailState) AppendForwardPathBuffer(data []byte) {
 	mailState.forwardPathBuffer = data
 }
 
-func (mailState *MailState) SetMailDataBuffer(data []byte) {
+func (mailState *MailState) AppendMailDataBuffer(data []byte) {
 	mailState.mailDataBuffer = data
 }
 

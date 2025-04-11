@@ -1,9 +1,12 @@
 package client
 
 import (
+	"context"
 	"encoding/json"
 	"io"
+	"log"
 	"net/http"
+	"time"
 )
 
 func sendMail(w http.ResponseWriter, r *http.Request) {
@@ -12,9 +15,9 @@ func sendMail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	type body struct {
-		from string
-		to   []string
-		body *string
+		From string   `json:"from"`
+		To   []string `json:"to"`
+		Body *string  `json:"body"`
 	}
 	var m body
 	bodyBytes, err := io.ReadAll(r.Body)
@@ -23,17 +26,43 @@ func sendMail(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error whi;e parsing the body", http.StatusBadRequest)
 		return
 	}
-	client := GetClient()
-
-	err = client.SendEmail(m.from, m.to[0], m.body)
+	client := getClient()
+	err = client.SendEmail(m.From, m.To[0], m.Body)
 	if err != nil {
 		http.Error(w, "Error while sending the mail", http.StatusBadRequest)
 		return
 	}
 }
 
-func main() {
-	http.HandleFunc("/newRequest", sendMail)
+type clientServer struct {
+	http.Server
+}
 
-	http.ListenAndServe(":8000", nil)
+func NewClientServer(address string, port string) *clientServer {
+	return &clientServer{
+		Server: http.Server{
+			Addr: address + ":" + port,
+		},
+	}
+}
+
+func (c *clientServer) Listen() {
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("/newRequest", sendMail)
+	log.Println("Listenting on port ", c.Addr)
+	c.Handler = mux
+	go c.ListenAndServe()
+
+}
+
+func (c *clientServer) Close() {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	err := c.Shutdown(ctx)
+	if err != nil {
+		log.Println("Error shutting down server", err)
+	} else {
+		log.Println("Server gracefully stopped")
+	}
 }
