@@ -6,6 +6,7 @@ import (
 	"strings"
 	"unicode"
 
+	"github.com/Anurag-Raut/smtp/logger"
 	"github.com/Anurag-Raut/smtp/server/io/reader"
 )
 
@@ -20,6 +21,7 @@ func NewParser(reader *reader.Reader) *Parser {
 }
 
 func (p *Parser) ParseCommandToken() (string, error) {
+	logger.ServerLogger.Println("TRYINGH TO READ CODE1")
 	return p.reader.ReadStringOfLen(4)
 }
 
@@ -148,11 +150,10 @@ func (p *Parser) ParseEHLO() (string, error) {
 }
 
 func (p *Parser) parseDomain() (string, error) {
-	_, err := p.Expect(LEFT_ANGLE_BRAC)
-	if err != nil {
-		return "", err
-	}
 	subDomain, err := p.parseSubDomain()
+	if err != nil {
+		return "", nil
+	}
 	for {
 		_, err := p.Expect(DOT)
 		if err != nil {
@@ -191,18 +192,18 @@ func (p *Parser) parseSubDomain() (string, error) {
 		middleVal += ch
 	}
 
-	if len(middleVal) > 0 {
-		err := p.reader.UnreadByte()
-		if err != nil {
-			return "", err
-		}
-		_, err = p.ExpectMultiple(ALPHA, DIGIT)
-
-		if err != nil {
-			return firstVal + middleVal, err
-		}
-
-	}
+	// if len(middleVal) > 0 {
+	// 	err := p.reader.UnreadByte()
+	// 	if err != nil {
+	// 		return "", err
+	// 	}
+	// 	_, err = p.ExpectMultiple(ALPHA, DIGIT)
+	//
+	// 	if err != nil {
+	// 		return firstVal + middleVal, err
+	// 	}
+	//
+	// }
 	return firstVal + middleVal, nil
 
 }

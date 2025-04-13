@@ -1,11 +1,11 @@
 package server
 
 import (
-	"bufio"
 	"net"
 
 	"github.com/Anurag-Raut/smtp/logger"
 	"github.com/Anurag-Raut/smtp/server/io/reader"
+	"github.com/Anurag-Raut/smtp/server/io/writer"
 	"github.com/Anurag-Raut/smtp/server/session"
 )
 
@@ -78,9 +78,8 @@ func (s *Server) Close() {
 
 func handleConn(conn net.Conn) {
 	logger.ServerLogger.Println("GOT A CONNECCTION")
-	reader := reader.NewReader(conn)
-	writer := bufio.NewWriter(conn)
-	session := session.NewSession()
-	session.Begin(reader, writer)
+
+	session := session.NewSession(reader.NewReader(conn), writer.NewWriter(conn))
+	session.Begin()
 
 }

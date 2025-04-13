@@ -1,10 +1,9 @@
 package reply
 
 import (
-	"bufio"
-	"strconv"
-
 	"github.com/Anurag-Raut/smtp/logger"
+	"github.com/Anurag-Raut/smtp/server/io/writer"
+	"strconv"
 )
 
 var CLRF = "\r\n"
@@ -55,7 +54,7 @@ func (r *GreetingReply) format() string {
 	return (replyString)
 }
 
-func Greet(w *bufio.Writer) error {
+func Greet(w *writer.Writer) error {
 	text := []string{"Anurag Server"}
 	rp := GreetingReply{
 		Reply: Reply{
@@ -79,5 +78,5 @@ func NewReply(code uint16, textlines ...string) *Reply {
 	}
 }
 
-func (r Reply) HandleSmtpReply(w *bufio.Writer) {
+func (r Reply) HandleSmtpReply(w *writer.Writer) {
 }

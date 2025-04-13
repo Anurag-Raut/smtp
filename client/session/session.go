@@ -1,13 +1,13 @@
 package session
 
 import (
-	"bufio"
 	"net"
 	"net/http"
 
 	"github.com/Anurag-Raut/smtp/client/dto/command"
 	"github.com/Anurag-Raut/smtp/client/dto/reply"
 	"github.com/Anurag-Raut/smtp/client/io/reader"
+	"github.com/Anurag-Raut/smtp/client/io/writer"
 	"github.com/Anurag-Raut/smtp/client/parser"
 	"github.com/Anurag-Raut/smtp/logger"
 )
@@ -15,14 +15,14 @@ import (
 type Session struct {
 	smtpConn   net.Conn
 	reader     *reader.Reader
-	writer     *bufio.Writer
+	writer     *writer.Writer
 	httpWriter http.ResponseWriter
 }
 
 func NewSession(conn net.Conn, w http.ResponseWriter) *Session {
 	return &Session{
 		reader:     reader.NewReader(conn),
-		writer:     bufio.NewWriter(conn),
+		writer:     writer.NewWriter(conn),
 		httpWriter: w,
 		smtpConn:   conn,
 	}
@@ -48,6 +48,8 @@ func (s *Session) Begin() error {
 	}
 	logger.ClientLogger.Println("Parsed Greeting")
 	command.SendEHLO(s.writer)
+
+	logger.ClientLogger.Println("EHLO SENT Greeting")
 	reply.GetReply(parser.ReplyLine, p)
 	return nil
 }

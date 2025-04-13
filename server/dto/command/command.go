@@ -1,6 +1,7 @@
 package command
 
 import (
+	"github.com/Anurag-Raut/smtp/logger"
 	"github.com/Anurag-Raut/smtp/server/dto/reply"
 	. "github.com/Anurag-Raut/smtp/server/parser"
 	"github.com/Anurag-Raut/smtp/server/state"
@@ -244,7 +245,7 @@ func GetCommand(parser *Parser) (CommandInterface, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	logger.ServerLogger.Println(cmdToken, ":CMD TROKEN")
 	cmdObj := NewCommand(cmdToken, parser)
 	err = cmdObj.ParseCommand()
 	if err != nil {
