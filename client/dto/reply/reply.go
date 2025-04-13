@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/Anurag-Raut/smtp/client/parser"
+	"github.com/Anurag-Raut/smtp/logger"
 )
 
 type Reply struct {
@@ -24,6 +25,7 @@ type GreetingReply struct {
 }
 
 func (r *GreetingReply) ParseReply() error {
+	logger.ClientLogger.Println("PRINTING GREETING")
 	identifier, textStrings, err := r.parser.ParseGreeting()
 	if err != nil {
 		return err
@@ -43,6 +45,7 @@ func (r *Reply) ParseReply() error {
 	r.textStrings = textStrings
 	return nil
 }
+
 func (r *Reply) Execute() error {
 	return nil
 }
@@ -68,7 +71,7 @@ func GetReply(token parser.ReplyToken, p *parser.ReplyParser) (reply ReplyInterf
 		}
 
 	}
-
+	logger.ClientLogger.Println("PRINTING reply tyoe", reply)
 	err = reply.ParseReply()
 	if err != nil {
 		return nil, err

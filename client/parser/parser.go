@@ -1,13 +1,13 @@
 package parser
 
 import (
-	"bufio"
 	"errors"
 	"strconv"
 	"strings"
 	"unicode"
 
 	"github.com/Anurag-Raut/smtp/client/io/reader"
+	"github.com/Anurag-Raut/smtp/logger"
 )
 
 func GetDomainFromEmail(email string) (domain string, err error) {
@@ -19,15 +19,16 @@ func GetDomainFromEmail(email string) (domain string, err error) {
 }
 
 type ReplyParser struct {
-	reader reader.Reader
+	reader *reader.Reader
 }
 
-func NewReplyParser(r *bufio.Reader) *ReplyParser {
-	return &ReplyParser{reader: *reader.NewReader(r)}
+func NewReplyParser(r *reader.Reader) *ReplyParser {
+	return &ReplyParser{reader: r}
 }
 
 func (p *ReplyParser) ParseGreeting() (identifier string, textStrings []string, err error) {
 	statusCodeString, err := p.expect(CODE)
+	logger.ClientLogger.Println(statusCodeString)
 	if err != nil {
 		return identifier, textStrings, err
 	}
@@ -42,10 +43,7 @@ func (p *ReplyParser) ParseGreeting() (identifier string, textStrings []string, 
 	_, err = p.expect(SPACE)
 	if err == nil {
 		identifier, textString, err := p.parseSingleLine()
-		if err != nil {
-			return identifier, textString, err
-		}
-		return identifier, textString, nil
+		return identifier, textString, err
 
 	} else {
 		_, err := p.expect(HYPHEN)
@@ -118,6 +116,7 @@ func (p *ReplyParser) ParseReplyLine() (replyCode int, textStrings []string, err
 
 func (p *ReplyParser) parseSingleLine() (identifier string, textStrings []string, err error) {
 	identifier, err = p.parseDomain()
+	logger.ClientLogger.Println("ERROR IN Parsing domain", err)
 	if err != nil {
 		identifier, err = p.parseAddressLiteral()
 		if err != nil {
@@ -133,7 +132,7 @@ func (p *ReplyParser) parseSingleLine() (identifier string, textStrings []string
 		if err != nil {
 			return identifier, textStrings, err
 		}
-
+		logger.ClientLogger.Println("PARSE TEXT STRING", textString)
 	}
 	_, err = p.expect(CRLF)
 
@@ -230,21 +229,21 @@ func (p *ReplyParser) parserTextString() (string, error) {
 }
 
 func (p *ReplyParser) parseDomain() (string, error) {
-	_, err := p.expect(LEFT_ANGLE_BRAC)
+	subDomain, err := p.parseSubDomain()
 	if err != nil {
 		return "", err
 	}
-	subDomain, err := p.parseSubDomain()
 	for {
 		_, err := p.expect(DOT)
 		if err != nil {
-			if (errors.Is(err, TokenNotFound{})) {
+			if (errors.Is(err, TokenNotFound{token: DOT})) {
 				break
 			} else {
 				return "", err
 			}
 
 		}
+		logger.ClientLogger.Println("we already here: ", subDomain)
 		subDomain += "."
 		newSubDomain, err := p.parseSubDomain()
 		if err != nil {
@@ -262,7 +261,7 @@ func (p *ReplyParser) parseSubDomain() (string, error) {
 	}
 	middleVal := ""
 	for {
-		ch, err := p.expectMultiple(ALPHA, DIGIT)
+		ch, err := p.expectMultiple(ALPHA, DIGIT, HYPHEN)
 		if err != nil {
 			if (errors.Is(err, TokenNotFound{})) {
 				break
@@ -272,19 +271,18 @@ func (p *ReplyParser) parseSubDomain() (string, error) {
 		}
 		middleVal += ch
 	}
+	// byh, _ := p.reader.Peek(1)
+	// logger.ClientLogger.Println("PRITING BYTE AFTER in subdomain, ", string(byh))
 
-	if len(middleVal) > 0 {
-		err := p.reader.UnreadByte()
-		if err != nil {
-			return "", err
-		}
-		_, err = p.expectMultiple(ALPHA, DIGIT)
-
-		if err != nil {
-			return firstVal + middleVal, err
-		}
-
-	}
+	// if len(middleVal) > 0 {
+	//
+	// 	_, err = p.expectMultiple(ALPHA, DIGIT)
+	//
+	// 	if err != nil {
+	// 		return firstVal + middleVal, err
+	// 	}
+	//
+	// }
 	return firstVal + middleVal, nil
 
 }
@@ -387,7 +385,11 @@ func (p *ReplyParser) expect(token TokenType) (string, error) {
 	case CODE:
 		{
 
+			logger.ClientLogger.Println("EXPECTING CODE")
 			bytes, err := p.reader.Peek(3)
+			logger.ClientLogger.Println("PEEKIED", bytes)
+			logger.ClientLogger.Println(string(bytes), "BYTES")
+
 			if err != nil {
 				return "", nil
 			}
@@ -429,13 +431,13 @@ func (p *ReplyParser) expect(token TokenType) (string, error) {
 			}
 			return string(bytes), nil
 		}
-	case CRLF:
+	case DOT:
 		{
 			bytes, err := p.reader.Peek(1)
 			if err != nil {
 				return "", err
 			}
-			if string(bytes) != " " {
+			if string(bytes) != "." {
 				return "", TokenNotFound{token: token}
 			}
 			_, err = p.reader.ReadByte()
@@ -443,6 +445,39 @@ func (p *ReplyParser) expect(token TokenType) (string, error) {
 				return "", err
 			}
 			return string(bytes), nil
+		}
+
+	case HYPHEN:
+		{
+			bytes, err := p.reader.Peek(1)
+			if err != nil {
+				return "", err
+			}
+			if string(bytes) != "-" {
+				return "", TokenNotFound{token: token}
+			}
+			_, err = p.reader.ReadByte()
+			if err != nil {
+				return "", err
+			}
+			return string(bytes), nil
+		}
+
+	case CRLF:
+		{
+			bytes, err := p.reader.Peek(2)
+			if err != nil {
+				return "", err
+			}
+			if string(bytes) != "\r\n" {
+				return "", TokenNotFound{token: token}
+			}
+			crlfBytes := make([]byte, 2)
+			_, err = p.reader.Read(crlfBytes)
+			if err != nil {
+				return "", err
+			}
+			return string(crlfBytes), nil
 		}
 
 	case LEFT_ANGLE_BRAC:
@@ -477,10 +512,43 @@ func (p *ReplyParser) expect(token TokenType) (string, error) {
 			return string(bytes), nil
 
 		}
+	case LEFT_SQUARE_BRAC:
+		{
+			bytes, err := p.reader.Peek(1)
+			if err != nil {
+				return "", err
+			}
+
+			if string(bytes) != "[" {
+				return "", TokenNotFound{token: token}
+			}
+			_, err = p.reader.ReadByte()
+			if err != nil {
+				return "", err
+			}
+			return string(bytes), nil
+
+		}
+	case RIGHT_SQUARE_BRAC:
+		{
+			bytes, err := p.reader.Peek(1)
+			if err != nil {
+				return "", err
+			}
+			if string(bytes) != "]" {
+				return "", TokenNotFound{token: token}
+			}
+			_, err = p.reader.ReadByte()
+			if err != nil {
+				return "", err
+			}
+			return string(bytes), nil
+
+		}
 
 	default:
 		{
-			return "", errors.New("No Matching token found")
+			return "", errors.New("No Matching token found " + strconv.Itoa(int(token)))
 		}
 	}
 

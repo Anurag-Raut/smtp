@@ -2,9 +2,9 @@ package server
 
 import (
 	"bufio"
-	"log"
 	"net"
 
+	"github.com/Anurag-Raut/smtp/logger"
 	"github.com/Anurag-Raut/smtp/server/io/reader"
 	"github.com/Anurag-Raut/smtp/server/session"
 )
@@ -49,11 +49,11 @@ func NewServer(c Config) *Server {
 }
 
 func (s *Server) Listen() {
-	log.Println("Listening on port", s.port)
+	logger.ServerLogger.Println("Listening on port", s.port)
 	newListner, err := net.Listen("tcp", s.adddress+":"+s.port)
 	s.listner = newListner
 	if err != nil {
-		log.Println("Error: ", err.Error())
+		logger.ServerLogger.Println("Error: ", err.Error())
 	}
 
 	for {
@@ -61,10 +61,10 @@ func (s *Server) Listen() {
 		if err != nil {
 			select {
 			case <-s.done:
-				log.Println("server is shutting down")
+				logger.ServerLogger.Println("server is shutting down")
 				return
 			default:
-				log.Print("Error", err.Error())
+				logger.ServerLogger.Println("Error", err.Error())
 			}
 		}
 		go handleConn(c)
@@ -77,6 +77,7 @@ func (s *Server) Close() {
 }
 
 func handleConn(conn net.Conn) {
+	logger.ServerLogger.Println("GOT A CONNECCTION")
 	reader := reader.NewReader(conn)
 	writer := bufio.NewWriter(conn)
 	session := session.NewSession()

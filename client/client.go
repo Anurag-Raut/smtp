@@ -2,13 +2,13 @@ package client
 
 import (
 	"errors"
-	"log"
 	"net"
 	"net/http"
 	"slices"
 
 	"github.com/Anurag-Raut/smtp/client/parser"
 	"github.com/Anurag-Raut/smtp/client/session"
+	"github.com/Anurag-Raut/smtp/logger"
 )
 
 type Client struct {
@@ -26,7 +26,7 @@ func (c *Client) getMxRecords(from string) ([]*net.MX, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	//TODO: Remove this later in when domain is added
 	if domain == "localhost" {
 		return []*net.MX{
 			{Host: "127.0.0.1"},
@@ -49,10 +49,10 @@ func (c *Client) getMxRecords(from string) ([]*net.MX, error) {
 }
 
 func (c *Client) SendEmail(from string, to []string, body *string) error {
-	log.Println("FROM", from)
+	logger.ClientLogger.Println("FROM", from)
 	mxRecords, err := c.getMxRecords(from)
 	if err != nil {
-		log.Println(err)
+		logger.ClientLogger.Println(err)
 		return err
 	}
 
@@ -63,13 +63,16 @@ func (c *Client) SendEmail(from string, to []string, body *string) error {
 		}
 
 		session := session.NewSession(conn, c.httpWriter)
+
 		err = session.Begin()
+
 		if err == nil {
+
+			session.SendEmail(from, to, body)
 			return nil
 		} else {
-			log.Println("err:", err.Error())
+			logger.ClientLogger.Println("err:", err.Error())
 		}
-		session.SendEmail(from, to, body)
 
 	}
 

@@ -223,7 +223,19 @@ type QUIT_CMD struct {
 }
 
 func (cmd *QUIT_CMD) ParseCommand() error {
-	return nil
+	return cmd.parser.ParseQuit()
+}
+
+func (cmd *QUIT_CMD) ProcessCommand(mailState *state.MailState, replyChannel chan *reply.Reply) {
+	defer close(replyChannel)
+	err := mailState.SetMailStep(state.IDLE)
+	if err != nil {
+		replyChannel <- reply.NewReply(503)
+		return
+	}
+	mailState.ClearAll()
+	replyChannel <- reply.NewReply(221, "221 OK")
+	return
 }
 
 func GetCommand(parser *Parser) (CommandInterface, error) {

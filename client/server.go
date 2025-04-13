@@ -4,9 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"io"
-	"log"
 	"net/http"
 	"time"
+
+	"github.com/Anurag-Raut/smtp/logger"
 )
 
 func sendMail(w http.ResponseWriter, r *http.Request) {
@@ -50,7 +51,7 @@ func (c *clientServer) Listen() {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/newRequest", sendMail)
-	log.Println("Listenting on port ", c.Addr)
+	logger.ClientLogger.Println("Listenting on port ", c.Addr)
 	c.Handler = mux
 	go c.ListenAndServe()
 
@@ -61,8 +62,8 @@ func (c *clientServer) Close() {
 	defer cancel()
 	err := c.Shutdown(ctx)
 	if err != nil {
-		log.Println("Error shutting down server", err)
+		logger.ClientLogger.Println("Error shutting down server", err)
 	} else {
-		log.Println("Server gracefully stopped")
+		logger.ClientLogger.Println("Server gracefully stopped")
 	}
 }

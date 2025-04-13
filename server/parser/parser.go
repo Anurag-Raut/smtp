@@ -488,3 +488,8 @@ func (p *Parser) ParseDataLine() (line string, err error) {
 	line, err = p.reader.GetLine("\r\n")
 	return line, err
 }
+
+func (p *Parser) ParseQuit() (err error) {
+	_, err = p.Expect(CRLF)
+	return err
+}

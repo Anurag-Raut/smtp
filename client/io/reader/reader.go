@@ -4,15 +4,16 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	"net"
 )
 
 type Reader struct {
 	*bufio.Reader
 }
 
-func NewReader(r *bufio.Reader) *Reader {
-	reader := Reader{r}
-	return &reader
+func NewReader(conn net.Conn) *Reader {
+	reader := &Reader{Reader: bufio.NewReader(conn)}
+	return reader
 }
 
 func (r *Reader) GetWord(delim string) (string, error) {
