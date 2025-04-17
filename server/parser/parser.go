@@ -6,7 +6,6 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/Anurag-Raut/smtp/logger"
 	"github.com/Anurag-Raut/smtp/server/io/reader"
 )
 
@@ -142,6 +141,47 @@ func (p *Parser) Expect(token TokenType) (string, error) {
 
 		}
 
+	case COLON:
+		{
+			bytes, err := p.reader.Peek(1)
+			if err != nil {
+				return "", err
+			}
+			if string(bytes) != ":" {
+				return "", TokenNotFound{token: token}
+			}
+			_, err = p.reader.ReadByte()
+			if err != nil {
+				return "", err
+			}
+			return string(bytes), nil
+
+		}
+
+	case ATEXT:
+		{
+			bytes, err := p.reader.Peek(1)
+			if err != nil {
+				return "", err
+			}
+			ch := bytes[0]
+			if !((ch >= 'A' && ch <= 'Z') ||
+				(ch >= 'a' && ch <= 'z') ||
+				(ch >= '0' && ch <= '9') ||
+				ch == '!' || ch == '#' || ch == '$' || ch == '%' ||
+				ch == '&' || ch == '\'' || ch == '*' || ch == '+' ||
+				ch == '-' || ch == '/' || ch == '=' || ch == '?' ||
+				ch == '^' || ch == '_' || ch == '`' || ch == '{' ||
+				ch == '|' || ch == '}' || ch == '~') {
+				return "", TokenNotFound{token: token}
+			}
+			_, err = p.reader.ReadByte()
+			if err != nil {
+				return "", err
+			}
+			return string(ch), nil
+		}
+
 	case CRLF:
 		{
 			bytes, err := p.reader.Peek(2)
@@ -255,20 +295,28 @@ func (p *Parser) ParseMail() (string, error) {
 		return "", err
 	}
 	fromString, err := p.reader.ReadStringOfLen(4)
-	logger.ServerLogger.Println(fromString, "fromString")
 	if err != nil {
 		return "", err
 	}
 	if strings.ToLower(fromString) != "from" {
 		return "", TokenNotFound{token: KEYWORD}
 	}
+	_, err = p.Expect(COLON)
+	if err != nil {
+		return "", err
+	}
 	reversePath, err := p.parseReversePath()
-	return reversePath, nil
+	return reversePath, err
 }
 
 func (p *Parser) parseReversePath() (string, error) {
 	path, err := p.parsePath()
 	if err == nil {
+		_, err = p.Expect(CRLF)
+		if err != nil {
+			return "", err
+		}
+
 		return path, err
 	}
 
@@ -294,11 +342,8 @@ func (p *Parser) parsePath() (string, error) {
 		return "", err
 	}
 
-	err = p.parseAD1() //ignore source routes
+	p.parseAD1() //ignore source routes
 
-	if err != nil {
-		return "", err
-	}
 	mailbox, err := p.parseMailBox()
 	_, err = p.Expect(RIGHT_ANGLE_BRAC)
 	if err != nil {
@@ -384,7 +429,7 @@ func (p *Parser) parseDotString() (string, error) {
 	}
 	value := atom
 	for {
-		_, err := p.Expect(AT)
+		_, err := p.Expect(DOT)
 		if err != nil {
 			break
 		}
@@ -531,7 +576,6 @@ func (p *Parser) ParseData() error {
 }
 
 func (p *Parser) ParseDataLine() (line string, err error) {
-
 	line, err = p.reader.GetLine("\r\n")
 	return line, err
 }

@@ -9,9 +9,7 @@ import (
 	"github.com/Anurag-Raut/smtp/client/parser"
 	"github.com/Anurag-Raut/smtp/client/session"
 	"github.com/Anurag-Raut/smtp/logger"
-
 )
-
 
 type Client struct {
 	httpWriter http.ResponseWriter
@@ -51,7 +49,6 @@ func (c *Client) getMxRecords(from string) ([]*net.MX, error) {
 }
 
 func (c *Client) SendEmail(from string, to []string, body *string) error {
-	logger.ClientLogger.Println("FROM", from)
 	mxRecords, err := c.getMxRecords(from)
 	if err != nil {
 		logger.ClientLogger.Println(err)

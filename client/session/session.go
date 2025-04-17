@@ -9,7 +9,6 @@ import (
 	"github.com/Anurag-Raut/smtp/client/io/reader"
 	"github.com/Anurag-Raut/smtp/client/io/writer"
 	"github.com/Anurag-Raut/smtp/client/parser"
-	"github.com/Anurag-Raut/smtp/logger"
 )
 
 type Session struct {
@@ -30,13 +29,19 @@ func NewSession(conn net.Conn, w http.ResponseWriter) *Session {
 
 func (s *Session) SendEmail(from string, to []string, body *string) {
 
-	command.SendMail(s.writer, from)
-	command.SendRcpt(s.writer, to[0])
-	if body != nil {
-		command.SendBody(s.writer, *body)
-	}
-	command.SendQuit(s.writer)
-	s.smtpConn.Close()
+	p := parser.NewReplyParser(s.reader)
+	command.SendEHLO(s.writer)
+
+	reply.GetReply(parser.Ehlo, p)
+
+	command.SendMail(s.writer, "anurag@gmail.com")
+	reply.GetReply(parser.ReplyLine, p)
+
+	command.SendRcpt(s.writer, "anurag@gmail.com")
+	reply.GetReply(parser.ReplyLine, p)
+
+	command.SendBody(s.writer, p, "anurag@gmail.com")
+	reply.GetReply(parser.ReplyLine, p)
 }
 
 func (s *Session) Begin() error {
@@ -46,23 +51,5 @@ func (s *Session) Begin() error {
 	if err != nil {
 		return err
 	}
-	logger.ClientLogger.Println("Parsed Greeting")
-	command.SendEHLO(s.writer)
-
-	logger.ClientLogger.Println("EHLO SENT")
-	reply.GetReply(parser.Ehlo, p)
-
-	logger.ClientLogger.Println("EHLO GOTR REPLY")
-	command.SendMail(s.writer, "anurag@gmail.com")
-	reply.GetReply(parser.ReplyLine, p)
-
-	logger.ClientLogger.Println("MAIL GOTR REPLY")
-
-	command.SendRcpt(s.writer, "anurag@gmail.com")
-	reply.GetReply(parser.ReplyLine, p)
-
-	logger.ClientLogger.Println("RCPT GOTR REPLY")
-	command.SendBody(s.writer, "anurag@gmail.com")
-	reply.GetReply(parser.ReplyLine, p)
 	return nil
 }

@@ -4,7 +4,9 @@ import (
 	"fmt"
 
 	"github.com/Anurag-Raut/smtp/client/config"
+	"github.com/Anurag-Raut/smtp/client/dto/reply"
 	"github.com/Anurag-Raut/smtp/client/io/writer"
+	"github.com/Anurag-Raut/smtp/client/parser"
 )
 
 func SendEHLO(w *writer.Writer) error {
@@ -18,15 +20,22 @@ func SendMail(w *writer.Writer, reversePath string) error {
 }
 
 func SendRcpt(w *writer.Writer, forwardPath string) error {
-	_, err := w.WriteString(fmt.Sprintf("RCPT TO:%s\r\n", forwardPath))
+	_, err := w.WriteString(fmt.Sprintf("RCPT TO:<%s>\r\n", forwardPath))
 	return err
 }
 
-func SendBody(w *writer.Writer, body string) error {
+func SendBody(w *writer.Writer, p *parser.ReplyParser, body string) error {
+
 	_, err := w.WriteString(fmt.Sprintf("DATA\r\n"))
 	if err != nil {
 		return err
 	}
+
+	_, err = reply.GetReply(parser.ReplyLine, p)
+	if err != nil {
+		return err
+	}
+
 	_, err = w.WriteString(fmt.Sprintf("%s\r\n", body))
 
 	if err != nil {

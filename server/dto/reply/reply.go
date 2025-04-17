@@ -1,7 +1,6 @@
 package reply
 
 import (
-	"github.com/Anurag-Raut/smtp/logger"
 	"github.com/Anurag-Raut/smtp/server/io/writer"
 	"strconv"
 )
@@ -30,7 +29,7 @@ type EhloReply struct {
 
 func (r *Reply) format() string {
 	replyString := strconv.Itoa(int(r.code))
-	if r.text != nil {
+	if r.text != nil && len(r.text) > 0 {
 
 		replyString += " "
 		//BUG: check this out later
@@ -38,7 +37,6 @@ func (r *Reply) format() string {
 	}
 
 	replyString += CLRF
-	logger.ServerLogger.Println("reply string", replyString)
 	return replyString
 
 }
@@ -56,12 +54,10 @@ func (r *GreetingReply) format() string {
 	}
 
 	replyString += CLRF
-	logger.ServerLogger.Println("reply greeting string", replyString)
 	return (replyString)
 }
 
 func (r *EhloReply) format() string {
-
 	replyString := strconv.Itoa(int(r.code))
 	replyString += " "
 	replyString += r.domain
@@ -73,7 +69,6 @@ func (r *EhloReply) format() string {
 	}
 
 	replyString += CLRF
-	logger.ServerLogger.Println("reply greeting string", replyString)
 	return (replyString)
 }
 func Greet(w *writer.Writer) error {
@@ -87,7 +82,6 @@ func Greet(w *writer.Writer) error {
 	}
 	_, err := w.WriteString(rp.format())
 	if err != nil {
-		logger.ServerLogger.Println(err, "ERROR")
 		return err
 	}
 	return w.Flush()
@@ -112,6 +106,15 @@ func NewEhloReply(code uint16, textlines ...string) ReplyInterface {
 }
 
 func (r *Reply) HandleSmtpReply(w *writer.Writer) error {
+	_, err := w.WriteString(r.format())
+	return err
+}
+func (r *EhloReply) HandleSmtpReply(w *writer.Writer) error {
+	_, err := w.WriteString(r.format())
+	return err
+}
+
+func (r *GreetingReply) HandleSmtpReply(w *writer.Writer) error {
 	_, err := w.WriteString(r.format())
 	return err
 }

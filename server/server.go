@@ -77,7 +77,6 @@ func (s *Server) Close() {
 }
 
 func handleConn(conn net.Conn) {
-	logger.ServerLogger.Println("GOT A CONNECCTION")
 
 	session := session.NewSession(reader.NewReader(conn), writer.NewWriter(conn))
 	session.Begin()

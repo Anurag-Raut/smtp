@@ -1,7 +1,6 @@
 package session
 
 import (
-	"github.com/Anurag-Raut/smtp/logger"
 	"github.com/Anurag-Raut/smtp/server/dto/command"
 	"github.com/Anurag-Raut/smtp/server/dto/reply"
 	"github.com/Anurag-Raut/smtp/server/io/reader"
@@ -28,15 +27,11 @@ func (s *Session) Begin() {
 	reply.Greet(s.writer)
 	p := parser.NewParser(s.reader)
 	for {
-		logger.ServerLogger.Println(" LOOOp")
 		cmd, err := command.GetCommand(p)
 		if err != nil {
-			logger.ServerLogger.Println("ERROR IN LOOP", err)
 			return
 			// reply.HandleParseError(writer, cmd.GetCommandType(), err)
 		}
-
-		logger.ServerLogger.Println("GET COMMAND TYPE", cmd.GetCommandType())
 
 		replyChannel := make(chan reply.ReplyInterface)
 		go cmd.ProcessCommand(s.mailState, replyChannel)
@@ -49,7 +44,6 @@ func (s *Session) Begin() {
 
 			err := responseReply.HandleSmtpReply(s.writer)
 			if err != nil {
-				logger.ServerLogger.Println("EROR WHILE SENSIGN RESPONSE", err)
 				break
 			}
 		}

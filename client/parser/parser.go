@@ -7,7 +7,6 @@ import (
 	"unicode"
 
 	"github.com/Anurag-Raut/smtp/client/io/reader"
-	"github.com/Anurag-Raut/smtp/logger"
 )
 
 func GetDomainFromEmail(email string) (domain string, err error) {
@@ -28,7 +27,6 @@ func NewReplyParser(r *reader.Reader) *ReplyParser {
 
 func (p *ReplyParser) ParseGreeting() (identifier string, textStrings []string, err error) {
 	statusCodeString, err := p.expect(CODE)
-	logger.ClientLogger.Println(statusCodeString)
 	if err != nil {
 		return identifier, textStrings, err
 	}
@@ -55,30 +53,39 @@ func (p *ReplyParser) ParseGreeting() (identifier string, textStrings []string, 
 	}
 
 }
+
+func (p *ReplyParser) ParseEhloResponse() (replyCode int, domain string, textString []string, err error) {
+	_, err = p.expect(CODE)
+	if err != nil {
+		return replyCode, domain, textString, err
+	}
+	_, err = p.expect(SPACE)
+
+	if err != nil {
+		return replyCode, domain, textString, err
+	}
+	domain, err = p.parseDomain()
+
+	if err != nil {
+		return replyCode, domain, textString, err
+	}
+
+	_, err = p.expect(CRLF)
+
+	return replyCode, domain, textString, err
+}
+
 func (p *ReplyParser) ParseReplyLine() (replyCode int, textStrings []string, err error) {
 
-	codeString, err := p.expect(CODE)
-	if err != nil {
-		return replyCode, textStrings, err
-	}
-
-	replyCode, err = strconv.Atoi(codeString)
-	if err != nil {
-		return replyCode, textStrings, err
-	}
 	for {
 		codeString, err := p.expect(CODE)
 		if err != nil {
 			return replyCode, textStrings, err
 		}
 
-		rCode, err := strconv.Atoi(codeString)
+		_, err = strconv.Atoi(codeString)
 		if err != nil {
 			return replyCode, textStrings, err
-		}
-
-		if rCode != replyCode {
-			return replyCode, textStrings, errors.New("Expected same reply code as first line b ut got: " + codeString)
 		}
 
 		_, err = p.expect(HYPHEN)
@@ -92,8 +99,12 @@ func (p *ReplyParser) ParseReplyLine() (replyCode int, textStrings []string, err
 			if err != nil {
 				return replyCode, textStrings, nil
 			}
-		} else {
+			_, err = p.expect(CRLF)
+			if err != nil {
+				return replyCode, textStrings, err
+			}
 
+		} else {
 			_, err := p.expect(SPACE)
 			if err == nil {
 				txtString, err := p.parserTextString()
@@ -116,7 +127,6 @@ func (p *ReplyParser) ParseReplyLine() (replyCode int, textStrings []string, err
 
 func (p *ReplyParser) parseSingleLine() (identifier string, textStrings []string, err error) {
 	identifier, err = p.parseDomain()
-	logger.ClientLogger.Println("ERROR IN Parsing domain", err)
 	if err != nil {
 		identifier, err = p.parseAddressLiteral()
 		if err != nil {
@@ -132,7 +142,6 @@ func (p *ReplyParser) parseSingleLine() (identifier string, textStrings []string
 		if err != nil {
 			return identifier, textStrings, err
 		}
-		logger.ClientLogger.Println("PARSE TEXT STRING", textString)
 	}
 	_, err = p.expect(CRLF)
 
@@ -243,7 +252,6 @@ func (p *ReplyParser) parseDomain() (string, error) {
 			}
 
 		}
-		logger.ClientLogger.Println("we already here: ", subDomain)
 		subDomain += "."
 		newSubDomain, err := p.parseSubDomain()
 		if err != nil {
@@ -385,9 +393,7 @@ func (p *ReplyParser) expect(token TokenType) (string, error) {
 	case CODE:
 		{
 
-			logger.ClientLogger.Println("EXPECTING CODE")
 			bytes, err := p.reader.Peek(3)
-			logger.ClientLogger.Println("PEEKIED", string(bytes))
 
 			if err != nil {
 				return "", nil

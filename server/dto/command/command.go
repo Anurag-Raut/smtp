@@ -1,7 +1,6 @@
 package command
 
 import (
-	"github.com/Anurag-Raut/smtp/logger"
 	"github.com/Anurag-Raut/smtp/server/dto/reply"
 	. "github.com/Anurag-Raut/smtp/server/parser"
 	"github.com/Anurag-Raut/smtp/server/state"
@@ -36,40 +35,40 @@ func NewCommand(commandString string, parser *Parser) CommandInterface {
 		}
 	case "MAIL":
 		return &MAIL_CMD{
-			Command: Command{commandToken: MAIL},
+			Command: Command{commandToken: MAIL, parser: parser},
 		}
 
 	case "RCPT":
 		return &RCPT_CMD{
-			Command: Command{commandToken: RCPT},
+			Command: Command{commandToken: RCPT, parser: parser},
 		}
 	case "DATA":
 		return &DATA_CMD{
-			Command: Command{commandToken: EHLO},
+			Command: Command{commandToken: DATA, parser: parser},
 		}
 	case "NOOP":
 		return &NOOP_CMD{
-			Command: Command{commandToken: EHLO},
+			Command: Command{commandToken: NOOP, parser: parser},
 		}
 	case "VRFY":
 		return &VRFY_CMD{
-			Command: Command{commandToken: VRFY},
+			Command: Command{commandToken: VRFY, parser: parser},
 		}
 	case "EXPN":
 		return &EXPN_CMD{
-			Command: Command{commandToken: EXPN},
+			Command: Command{commandToken: EXPN, parser: parser},
 		}
 	case "HELP":
 		return &HELP_CMD{
-			Command: Command{commandToken: HELP},
+			Command: Command{commandToken: HELP, parser: parser},
 		}
 	case "RSET":
 		return &RESET_CMD{
-			Command: Command{commandToken: RSET},
+			Command: Command{commandToken: RSET, parser: parser},
 		}
 	case "QUIT":
 		return &QUIT_CMD{
-			Command: Command{commandToken: QUIT},
+			Command: Command{commandToken: QUIT, parser: parser},
 		}
 	default:
 		return nil
@@ -89,7 +88,6 @@ func (cmd *EHLO_CMD) ParseCommand() error {
 }
 
 func (cmd *EHLO_CMD) ProcessCommand(mailState *state.MailState, replyChannel chan reply.ReplyInterface) {
-	// send EHLO OK RSP
 	defer close(replyChannel)
 
 	err := mailState.SetMailStep(state.EHLO)
@@ -134,6 +132,11 @@ type RCPT_CMD struct {
 }
 
 func (cmd *RCPT_CMD) ParseCommand() error {
+	forwardPath, err := cmd.parser.ParseRCPT()
+	if err != nil {
+		return err
+	}
+	cmd.forwardPath = forwardPath
 	return nil
 }
 
@@ -154,7 +157,8 @@ type DATA_CMD struct {
 }
 
 func (cmd *DATA_CMD) ParseCommand() error {
-	return nil
+	err := cmd.parser.ParseData()
+	return err
 }
 
 func (cmd *DATA_CMD) ProcessCommand(mailState *state.MailState, replyChannel chan reply.ReplyInterface) {
@@ -165,8 +169,10 @@ func (cmd *DATA_CMD) ProcessCommand(mailState *state.MailState, replyChannel cha
 		return
 	}
 	replyChannel <- reply.NewReply(354)
+
 	for {
 		line, err := cmd.parser.ParseDataLine()
+
 		if err != nil {
 			replyChannel <- reply.NewReply(502, err.Error())
 			return
@@ -174,9 +180,9 @@ func (cmd *DATA_CMD) ProcessCommand(mailState *state.MailState, replyChannel cha
 		if line == "." {
 			break
 		}
-
-		mailState.AppendMailDataBuffer([]byte(cmd.data))
+		mailState.AppendMailDataBuffer([]byte(line))
 	}
+
 	replyChannel <- reply.NewReply(250)
 }
 
@@ -250,7 +256,6 @@ func GetCommand(parser *Parser) (CommandInterface, error) {
 	if err != nil {
 		return nil, err
 	}
-	logger.ServerLogger.Println("COMMAND TOKEN", cmdToken)
 	cmdObj := NewCommand(cmdToken, parser)
 	err = cmdObj.ParseCommand()
 	if err != nil {

@@ -2,9 +2,9 @@ package reply
 
 import (
 	"errors"
+	"strconv"
 
 	"github.com/Anurag-Raut/smtp/client/parser"
-	"github.com/Anurag-Raut/smtp/logger"
 )
 
 type Reply struct {
@@ -17,6 +17,7 @@ type Reply struct {
 type ReplyInterface interface {
 	ParseReply() error
 	Execute() error
+	GetReplyCode() string
 }
 
 type GreetingReply struct {
@@ -40,11 +41,11 @@ func (r *GreetingReply) ParseReply() error {
 }
 
 func (r *EhloReply) ParseReply() error {
-	domain, textStrings, err := r.parser.ParseGreeting()
+	replyCode, domain, textStrings, err := r.parser.ParseEhloResponse()
 	if err != nil {
 		return err
 	}
-	r.code = 220
+	r.code = replyCode
 	r.textStrings = textStrings
 	r.domain = domain
 	return nil
@@ -58,6 +59,10 @@ func (r *Reply) ParseReply() error {
 	r.code = replyCode
 	r.textStrings = textStrings
 	return nil
+}
+
+func (r *Reply) GetReplyCode() string {
+	return strconv.Itoa(r.code)
 }
 
 func (r *Reply) Execute() error {
@@ -89,7 +94,6 @@ func GetReply(token parser.ReplyToken, p *parser.ReplyParser) (reply ReplyInterf
 		}
 
 	}
-	logger.ClientLogger.Println("PRINTING reply tyoe", reply)
 	err = reply.ParseReply()
 	if err != nil {
 		return nil, err
