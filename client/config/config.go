@@ -1,7 +1,7 @@
 package config
 
 import (
-	"os"
-)
 
-var ClientDomain = os.Getenv("CLIENT_DOMAIN")
+)
+//TODO: .env loading issue solve
+var ClientDomain = "gmail.comn"

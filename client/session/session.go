@@ -49,7 +49,20 @@ func (s *Session) Begin() error {
 	logger.ClientLogger.Println("Parsed Greeting")
 	command.SendEHLO(s.writer)
 
-	logger.ClientLogger.Println("EHLO SENT Greeting")
+	logger.ClientLogger.Println("EHLO SENT")
+	reply.GetReply(parser.Ehlo, p)
+
+	logger.ClientLogger.Println("EHLO GOTR REPLY")
+	command.SendMail(s.writer, "anurag@gmail.com")
+	reply.GetReply(parser.ReplyLine, p)
+
+	logger.ClientLogger.Println("MAIL GOTR REPLY")
+
+	command.SendRcpt(s.writer, "anurag@gmail.com")
+	reply.GetReply(parser.ReplyLine, p)
+
+	logger.ClientLogger.Println("RCPT GOTR REPLY")
+	command.SendBody(s.writer, "anurag@gmail.com")
 	reply.GetReply(parser.ReplyLine, p)
 	return nil
 }

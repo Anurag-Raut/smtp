@@ -23,9 +23,12 @@ type GreetingReply struct {
 	serverIdentifier string
 	Reply
 }
+type EhloReply struct {
+	domain string
+	Reply
+}
 
 func (r *GreetingReply) ParseReply() error {
-	logger.ClientLogger.Println("PRINTING GREETING")
 	identifier, textStrings, err := r.parser.ParseGreeting()
 	if err != nil {
 		return err
@@ -33,6 +36,17 @@ func (r *GreetingReply) ParseReply() error {
 	r.code = 220
 	r.textStrings = textStrings
 	r.serverIdentifier = identifier
+	return nil
+}
+
+func (r *EhloReply) ParseReply() error {
+	domain, textStrings, err := r.parser.ParseGreeting()
+	if err != nil {
+		return err
+	}
+	r.code = 220
+	r.textStrings = textStrings
+	r.domain = domain
 	return nil
 }
 
@@ -63,6 +77,10 @@ func GetReply(token parser.ReplyToken, p *parser.ReplyParser) (reply ReplyInterf
 		break
 	case parser.Greeting:
 		reply = &GreetingReply{
+			Reply: Reply{parser: p},
+		}
+	case parser.Ehlo:
+		reply = &EhloReply{
 			Reply: Reply{parser: p},
 		}
 	default:

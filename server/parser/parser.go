@@ -21,7 +21,6 @@ func NewParser(reader *reader.Reader) *Parser {
 }
 
 func (p *Parser) ParseCommandToken() (string, error) {
-	logger.ServerLogger.Println("TRYINGH TO READ CODE1")
 	return p.reader.ReadStringOfLen(4)
 }
 
@@ -126,6 +125,39 @@ func (p *Parser) Expect(token TokenType) (string, error) {
 			return string(bytes), nil
 
 		}
+	case DOT:
+		{
+			bytes, err := p.reader.Peek(1)
+			if err != nil {
+				return "", err
+			}
+			if string(bytes) != "." {
+				return "", TokenNotFound{token: token}
+			}
+			_, err = p.reader.ReadByte()
+			if err != nil {
+				return "", err
+			}
+			return string(bytes), nil
+
+		}
+
+	case CRLF:
+		{
+			bytes, err := p.reader.Peek(2)
+			if err != nil {
+				return "", err
+			}
+			if string(bytes) != "\r\n" {
+				return "", TokenNotFound{token: token}
+			}
+			crlfBytes := make([]byte, 2)
+			_, err = p.reader.Read(crlfBytes)
+			if err != nil {
+				return "", err
+			}
+			return string(crlfBytes), nil
+		}
 
 	}
 
@@ -140,9 +172,18 @@ func (p *Parser) ParseEHLO() (string, error) {
 	domain, err := p.parseDomain()
 
 	if err == nil {
+		_, err = p.Expect(CRLF)
+		if err != nil {
+			return "", err
+		}
+
 		return domain, nil
 	}
 	addressLiteral, err := p.parseAddressLiteral()
+	if err != nil {
+		return "", err
+	}
+	_, err = p.Expect(CRLF)
 	if err != nil {
 		return "", err
 	}
@@ -157,10 +198,10 @@ func (p *Parser) parseDomain() (string, error) {
 	for {
 		_, err := p.Expect(DOT)
 		if err != nil {
-			if (errors.Is(err, TokenNotFound{})) {
+			if (errors.As(err, &TokenNotFound{})) {
 				break
 			} else {
-				return "", err
+				return subDomain, err
 			}
 
 		}
@@ -214,6 +255,7 @@ func (p *Parser) ParseMail() (string, error) {
 		return "", err
 	}
 	fromString, err := p.reader.ReadStringOfLen(4)
+	logger.ServerLogger.Println(fromString, "fromString")
 	if err != nil {
 		return "", err
 	}
@@ -239,6 +281,10 @@ func (p *Parser) parseReversePath() (string, error) {
 		return "", err
 	}
 
+	_, err = p.Expect(CRLF)
+	if err != nil {
+		return "", err
+	}
 	return "", nil
 }
 

@@ -38,15 +38,20 @@ func (s *Session) Begin() {
 
 		logger.ServerLogger.Println("GET COMMAND TYPE", cmd.GetCommandType())
 
-		replyChannel := make(chan *reply.Reply)
+		replyChannel := make(chan reply.ReplyInterface)
 		go cmd.ProcessCommand(s.mailState, replyChannel)
 		for {
-			var responseReply *reply.Reply
+			var responseReply reply.ReplyInterface
 			responseReply, ok := <-replyChannel
 			if !ok {
 				break
 			}
-			responseReply.HandleSmtpReply(s.writer)
+
+			err := responseReply.HandleSmtpReply(s.writer)
+			if err != nil {
+				logger.ServerLogger.Println("EROR WHILE SENSIGN RESPONSE", err)
+				break
+			}
 		}
 	}
 

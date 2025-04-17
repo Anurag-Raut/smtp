@@ -10,7 +10,7 @@ import (
 type CommandInterface interface {
 	GetCommandType() CommandToken
 	ParseCommand() error
-	ProcessCommand(mailState *state.MailState, replyChannel chan *reply.Reply)
+	ProcessCommand(mailState *state.MailState, replyChannel chan reply.ReplyInterface)
 }
 
 type Command struct {
@@ -22,7 +22,7 @@ func (cmd *Command) GetCommandType() CommandToken {
 	return cmd.commandToken
 }
 
-func (cmd *Command) ProcessCommand(mailState *state.MailState, replyChannel chan *reply.Reply) {
+func (cmd *Command) ProcessCommand(mailState *state.MailState, replyChannel chan reply.ReplyInterface) {
 	defer close(replyChannel)
 	replyChannel <- reply.NewReply(502, "Command not implemented")
 
@@ -88,7 +88,7 @@ func (cmd *EHLO_CMD) ParseCommand() error {
 	return err
 }
 
-func (cmd *EHLO_CMD) ProcessCommand(mailState *state.MailState, replyChannel chan *reply.Reply) {
+func (cmd *EHLO_CMD) ProcessCommand(mailState *state.MailState, replyChannel chan reply.ReplyInterface) {
 	// send EHLO OK RSP
 	defer close(replyChannel)
 
@@ -98,7 +98,7 @@ func (cmd *EHLO_CMD) ProcessCommand(mailState *state.MailState, replyChannel cha
 		return
 	}
 	mailState.ClearAll()
-	replyChannel <- reply.NewReply(250)
+	replyChannel <- reply.NewEhloReply(250)
 	return
 }
 
@@ -108,9 +108,14 @@ type MAIL_CMD struct {
 }
 
 func (cmd *MAIL_CMD) ParseCommand() error {
+	reversepath, err := cmd.parser.ParseMail()
+	if err != nil {
+		return err
+	}
+	cmd.reversePath = reversepath
 	return nil
 }
-func (cmd *MAIL_CMD) ProcessCommand(mailState *state.MailState, replyChannel chan *reply.Reply) {
+func (cmd *MAIL_CMD) ProcessCommand(mailState *state.MailState, replyChannel chan reply.ReplyInterface) {
 	defer close(replyChannel)
 	err := mailState.SetMailStep(state.MAIL)
 	if err != nil {
@@ -132,7 +137,7 @@ func (cmd *RCPT_CMD) ParseCommand() error {
 	return nil
 }
 
-func (cmd *RCPT_CMD) ProcessCommand(mailState *state.MailState, replyChannel chan *reply.Reply) {
+func (cmd *RCPT_CMD) ProcessCommand(mailState *state.MailState, replyChannel chan reply.ReplyInterface) {
 	defer close(replyChannel)
 	err := mailState.SetMailStep(state.RCPT)
 	if err != nil {
@@ -152,7 +157,7 @@ func (cmd *DATA_CMD) ParseCommand() error {
 	return nil
 }
 
-func (cmd *DATA_CMD) ProcessCommand(mailState *state.MailState, replyChannel chan *reply.Reply) {
+func (cmd *DATA_CMD) ProcessCommand(mailState *state.MailState, replyChannel chan reply.ReplyInterface) {
 	defer close(replyChannel)
 	err := mailState.SetMailStep(state.DATA)
 	if err != nil {
@@ -227,7 +232,7 @@ func (cmd *QUIT_CMD) ParseCommand() error {
 	return cmd.parser.ParseQuit()
 }
 
-func (cmd *QUIT_CMD) ProcessCommand(mailState *state.MailState, replyChannel chan *reply.Reply) {
+func (cmd *QUIT_CMD) ProcessCommand(mailState *state.MailState, replyChannel chan reply.ReplyInterface) {
 	defer close(replyChannel)
 	err := mailState.SetMailStep(state.IDLE)
 	if err != nil {
@@ -245,7 +250,7 @@ func GetCommand(parser *Parser) (CommandInterface, error) {
 	if err != nil {
 		return nil, err
 	}
-	logger.ServerLogger.Println(cmdToken, ":CMD TROKEN")
+	logger.ServerLogger.Println("COMMAND TOKEN", cmdToken)
 	cmdObj := NewCommand(cmdToken, parser)
 	err = cmdObj.ParseCommand()
 	if err != nil {

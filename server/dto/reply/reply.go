@@ -9,7 +9,8 @@ import (
 var CLRF = "\r\n"
 
 type ReplyInterface interface {
-	format() []byte
+	format() string
+	HandleSmtpReply(w *writer.Writer) error
 }
 
 type Reply struct {
@@ -22,7 +23,12 @@ type GreetingReply struct {
 	domain string
 }
 
-func (r *Reply) format() []byte {
+type EhloReply struct {
+	Reply
+	domain string
+}
+
+func (r *Reply) format() string {
 	replyString := strconv.Itoa(int(r.code))
 	if r.text != nil {
 
@@ -33,7 +39,7 @@ func (r *Reply) format() []byte {
 
 	replyString += CLRF
 	logger.ServerLogger.Println("reply string", replyString)
-	return []byte(replyString)
+	return replyString
 
 }
 
@@ -54,6 +60,22 @@ func (r *GreetingReply) format() string {
 	return (replyString)
 }
 
+func (r *EhloReply) format() string {
+
+	replyString := strconv.Itoa(int(r.code))
+	replyString += " "
+	replyString += r.domain
+	if r.text != nil {
+
+		replyString += " "
+		//BUG: check this out later
+		replyString += (r.text[0])
+	}
+
+	replyString += CLRF
+	logger.ServerLogger.Println("reply greeting string", replyString)
+	return (replyString)
+}
 func Greet(w *writer.Writer) error {
 	text := []string{"Anurag Server"}
 	rp := GreetingReply{
@@ -71,12 +93,25 @@ func Greet(w *writer.Writer) error {
 	return w.Flush()
 }
 
-func NewReply(code uint16, textlines ...string) *Reply {
+func NewReply(code uint16, textlines ...string) ReplyInterface {
 	return &Reply{
 		code: code,
 		text: textlines,
 	}
 }
 
-func (r Reply) HandleSmtpReply(w *writer.Writer) {
+func NewEhloReply(code uint16, textlines ...string) ReplyInterface {
+	return &EhloReply{
+		Reply: Reply{
+
+			code: code,
+			text: textlines,
+		},
+		domain: "gmail.com",
+	}
+}
+
+func (r *Reply) HandleSmtpReply(w *writer.Writer) error {
+	_, err := w.WriteString(r.format())
+	return err
 }

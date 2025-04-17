@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"net"
+
+	"github.com/Anurag-Raut/smtp/logger"
 )
 
 type Reader struct {
@@ -58,6 +60,7 @@ func (r Reader) ReadStringOfLen(n int) (string, error) {
 	if err != nil {
 		return "", err
 	}
+  logger.ServerLogger.Println(string(cmdBytes),"readLen",readLen)
 	if readLen != n {
 		return "", errors.New(fmt.Sprintf("Could not get string of %d bytes", n))
 

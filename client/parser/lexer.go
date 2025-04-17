@@ -24,6 +24,7 @@ type ReplyToken int
 const (
 	ReplyLine ReplyToken = iota
 	Greeting
+  Ehlo
 )
 
 type TokenNotFound struct {
