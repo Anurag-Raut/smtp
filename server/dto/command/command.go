@@ -199,7 +199,14 @@ type RESET_CMD struct {
 }
 
 func (cmd *RESET_CMD) ParseCommand() error {
-	return nil
+	return cmd.parser.ParseReset()
+}
+
+func (cmd *RESET_CMD) ProcessCommand(mailState *state.MailState, replyChannel chan reply.ReplyInterface) {
+	defer close(replyChannel)
+	mailState.ClearAll()
+	mailState.SetMailStep(state.EHLO)
+	replyChannel <- reply.NewReply(250, "250 OK")
 }
 
 type VRFY_CMD struct {
@@ -235,7 +242,12 @@ type NOOP_CMD struct {
 }
 
 func (cmd *NOOP_CMD) ParseCommand() error {
-	return nil
+	return cmd.parser.ParseNoop()
+}
+
+func (cmd *NOOP_CMD) ProcessCommand(mailState *state.MailState, replyChannel chan reply.ReplyInterface) {
+	defer close(replyChannel)
+	replyChannel <- reply.NewReply(250, "250 OK")
 }
 
 type QUIT_CMD struct {

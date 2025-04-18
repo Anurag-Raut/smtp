@@ -584,3 +584,28 @@ func (p *Parser) ParseQuit() (err error) {
 	_, err = p.Expect(CRLF)
 	return err
 }
+
+func (p *Parser) ParseReset() error {
+	_, err := p.Expect(CRLF)
+	return err
+}
+
+func (p *Parser) ParseNoop() error {
+	_, err := p.Expect(SPACE)
+	if err == nil {
+		_, err := p.Expect(TEXT) //ignore the string paramater
+		if err != nil {
+			return err
+		}
+
+	} else {
+		if (errors.As(err, &TokenNotFound{})) {
+			_, err := p.Expect(CRLF)
+			return err
+
+		} else {
+			return err
+		}
+	}
+	return nil
+}
