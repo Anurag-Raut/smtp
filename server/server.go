@@ -7,6 +7,7 @@ import (
 	"github.com/Anurag-Raut/smtp/server/io/reader"
 	"github.com/Anurag-Raut/smtp/server/io/writer"
 	"github.com/Anurag-Raut/smtp/server/session"
+	"github.com/Anurag-Raut/smtp/server/store"
 )
 
 type Server struct {
@@ -45,6 +46,11 @@ func NewServer(c Config) *Server {
 		adddress: addr,
 		done:     make(chan struct{}),
 	}
+	err := store.InitStore()
+	if err != nil {
+		//TODO: improve this , you can create store object and handle the operation on that
+		panic(err)
+	}
 	return &server
 }
 
@@ -74,6 +80,10 @@ func (s *Server) Listen() {
 func (s *Server) Close() {
 	close(s.done)
 	s.listner.Close()
+	err := store.CloseStore()
+	if err != nil {
+		panic(err)
+	}
 }
 
 func handleConn(conn net.Conn) {

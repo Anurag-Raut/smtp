@@ -182,6 +182,14 @@ func (cmd *DATA_CMD) ProcessCommand(mailState *state.MailState, replyChannel cha
 		}
 		mailState.AppendMailDataBuffer([]byte(line))
 	}
+	//TODO: store the message and then clear the state
+	err = mailState.StoreBuffer()
+	if err != nil {
+		//TODO: check if this is correct or not
+		replyChannel <- reply.NewReply(503, err.Error())
+		return
+	}
+	mailState.ClearAll()
 
 	replyChannel <- reply.NewReply(250)
 }

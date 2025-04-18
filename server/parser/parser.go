@@ -264,7 +264,7 @@ func (p *Parser) parseSubDomain() (string, error) {
 	for {
 		ch, err := p.ExpectMultiple(ALPHA, DIGIT)
 		if err != nil {
-			if (errors.Is(err, TokenNotFound{})) {
+			if (errors.As(err, &TokenNotFound{})) {
 				break
 			} else {
 				return "", err

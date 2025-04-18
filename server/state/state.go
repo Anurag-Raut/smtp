@@ -2,6 +2,8 @@ package state
 
 import (
 	"errors"
+
+	"github.com/Anurag-Raut/smtp/server/store"
 )
 
 type MAIL_STEP int
@@ -19,7 +21,7 @@ type MailState struct {
 	forwardPathBuffer []byte
 	mailDataBuffer    []byte
 
-	stepIndex int
+	stepIndex MAIL_STEP
 }
 
 func (mailState *MailState) ClearReversePathBuffer() {
@@ -55,10 +57,19 @@ func (mailState *MailState) AppendMailDataBuffer(data []byte) {
 func (mailState *MailState) SetMailStep(step MAIL_STEP) error {
 	if step == EHLO {
 
-	} else if mailState.stepIndex >= int(step) {
+	} else if mailState.stepIndex >= step {
 		msg := "Bad sequence of commands"
 		return errors.New(msg)
 	}
-	mailState.stepIndex = int(step)
+	mailState.stepIndex = step
 	return nil
+}
+
+func (mailState *MailState) StoreBuffer() error {
+	if mailState.stepIndex != DATA {
+		return errors.New("ERROR, invalid store command , step not set to store")
+	}
+	err := store.StoreEmail(string(mailState.reversePathBuffer), string(mailState.forwardPathBuffer), string(mailState.mailDataBuffer))
+	return err
+
 }
