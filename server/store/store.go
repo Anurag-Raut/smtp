@@ -17,18 +17,6 @@ func InitStore() error {
 	}
 	db = conn
 
-	createTable := `
-	CREATE TABLE IF NOT EXISTS emails (
-		id SERIAL PRIMARY KEY,
-		sender TEXT NOT NULL,
-		recipient TEXT NOT NULL,
-		body TEXT NOT NULL,
-		created_at TIMESTAMP DEFAULT now()
-	)`
-	_, err = db.Exec(context.Background(), createTable)
-	if err != nil {
-		return fmt.Errorf("table creation error: %w", err)
-	}
 	return nil
 }
 

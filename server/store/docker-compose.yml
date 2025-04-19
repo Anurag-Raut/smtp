@@ -1,5 +1,3 @@
-
-version: "3.8"
 services:
   db:
     image: postgres:15
@@ -12,6 +10,6 @@ services:
       - "5432:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
-
+      - ./init:/docker-entrypoint-initdb.d/
 volumes:
   db_data:
